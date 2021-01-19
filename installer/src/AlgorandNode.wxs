@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+     
+<!--
+Algorand Node Installer for Windows
+Version 1.0.0 (210119)
+
+WiX Definition File
+
+Copyright (C) 2021 Rand Labs
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+   <!-- Set service name and upgrade code depending on type of net -->
+
+    <?if $(var.NETWORK) = "betanet" ?>
+        <?define FULLSERVICENAME = "algodsvc_betanet" ?>
+        <?define FULLUPGRADECODE = 'ff190b41-c9d0-4e2f-83ba-96e508ab45bf' ?>
+        <?define PRODUCTID = 'd9e9519a-7257-422a-8d6a-fb465023b505' ?>
+    <?elseif $(var.NETWORK) = "mainnet" ?>
+        <?define FULLSERVICENAME = "algodsvc_mainnet" ?>
+        <?define FULLUPGRADECODE = 'a5fc9132-8d0b-4731-9a8f-2478a593a7a2' ?>
+        <?define PRODUCTID = 'ba3f848c-c25d-4eaa-b2ad-04c10b2c499d' ?>
+    <?elseif $(var.NETWORK) = "testnet" ?>
+        <?define FULLSERVICENAME = "algodsvc_testnet" ?>
+        <?define FULLUPGRADECODE = '293a0964-5644-48c0-b79f-3031296c2c99' ?>
+        <?define PRODUCTID = '3b4994ac-9be1-4151-9dbd-3a4abd59cb4f' ?>
+    <?else ?>
+        <?error NETWORK variable must be defined to betanet, mainnet or testnet. ?>
+    <?endif ?>
+
+    <?ifndef GOBINFOLDER ?>
+        <?error Required GOBINFOLDER variable not set ?>
+    <?endif ?>
+    <?ifndef SVCBINFOLDER ?>
+        <?error Required SVCBINFOLDER variable not set ?>
+    <?endif ?>
+
+    <?define GENESISFILE = '../genesis/$(var.NETWORK)/genesis.json' ?>
+    <?define SAMPLECONFIGFILE = '../config.json.example' ?>
+
+    <Product Name='Algorand Node ($(var.NETWORK))' Manufacturer='Algorand Foundation'
+        Id="$(var.PRODUCTID)"
+        UpgradeCode="$(var.FULLUPGRADECODE)"
+        Language='1033' Codepage='1252' Version='1.0.0'>
+        <Package Id='*' Keywords='Installer' Description="Algorand Node Installer for Windows ($(var.NETWORK))"
+            InstallScope="perMachine"
+            Manufacturer='Rand Labs'
+            Comments='2021 Algorand llc' 
+            InstallerVersion='500'
+            Languages='1033'
+            Compressed='yes'
+            SummaryCodepage='1252' />
+
+        
+        <Property Id="ApplicationFolderName" Value="AlgorandFolder" />
+        <Property Id="WixAppFolder" Value="WixPerMachineFolder" />      
+
+        <!-- Windows installer Add/remove programs properties -->
+        <Property Id="ARPHELPLINK" Value="https://www.algorand.com" />
+        <Property Id="ARPPRODUCTICON" Value="AlgoIconBlack.ico" />
+        <Icon Id="AlgoIconBlack.ico" SourceFile="res\AlgoIconBlack.ico"/>
+
+        <!-- This CA just strips the trailing slash as a workaround
+         for the shortcut argument to cmd.exe /k goal.exe -d -->
+
+        <CustomAction Id="RemoveTrailingSlash" Script="vbscript">
+        <![CDATA[         
+            value = Session.Property("NodeDataDirAlgorandDataNetSpecific")
+            If Right(value, 1) = "\" Then
+                value = Left(value, Len(value) - 1) 
+            End If
+            Session.Property("NodeDataDirAlgorandDataNetSpecific2") = value      
+        ]]>
+        </CustomAction>
+
+        <InstallExecuteSequence>
+            <Custom Action="RemoveTrailingSlash" After="CostFinalize">NOT REMOVE</Custom>
+        </InstallExecuteSequence>
+
+        <Condition Message="This application is only supported on Windows 8 or higher."><![CDATA[VersionNT >= 602]]></Condition>
+        <Condition Message="[ProductName] cannot be installed on a 32-bit operating system."><![CDATA[VersionNT64]]></Condition>
+
+        <Media Id='1' Cabinet='Algorand_$(var.NETWORK).cab' EmbedCab='yes' DiskPrompt='Disk 1' />
+        <Property Id='DiskPrompt' Value="Algorand Node Installer Media" />
+
+        <!-- UI -->
+        
+        <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+        <UIRef Id="WixUI_InstallDir_Algorand" />
+
+        <WixVariable Id="WixUILicenseRtf" Value="res\COPYING.rtf" />
+        <WixVariable Id="WixUIBannerBmp" Value="res\header.bmp" />
+        <WixVariable Id="WixUIDialogBmp" Value="res\back.bmp" />
+
+        <!-- Target directory starts here -->
+
+        <Directory Id='TARGETDIR' Name='SourceDir'>
+
+        <!-- Genesis and config file -->
+
+            <Directory Id='CommonAppDataFolder'>
+                <Directory Id='NodeDataDirAlgorand' Name='Algorand'>
+                    <Directory Id='NodeDataDirAlgorandData' Name='data'>
+                        <Directory Id='NodeDataDirAlgorandDataNetSpecific' Name='$(var.NETWORK)'>
+                            <Component Id='genesisfile' Guid='2c0a4424-5b60-4ea9-8018-6ba8ccc1c067'>
+                                <File Id="genesisjson" Name="genesis.json" DiskId="1" Source="$(var.GENESISFILE)" />
+                            </Component>
+                            <Component Id='configfile' Guid='a7b7760e-ad84-4caa-aec0-938c0641d4ec'>
+                                <File Id="configfile" Name="config.json" DiskId="1" Source="$(var.SAMPLECONFIGFILE)" />
+                            </Component>
+                        </Directory>
+                    </Directory>
+                </Directory>
+            </Directory> 
+
+            <!-- Shortcut Setup -->
+
+            <Directory Id="ProgramMenuFolder" Name="Programs">
+                <Directory Id="ApplicationProgramsFolder" Name="Algorand Node ($(var.NETWORK))">
+                    <Component Id="AlgorandShortcuts" Guid="*">
+                        <Shortcut Id="CommandLineTools" Name="Algorand Command Line Tools" 
+                            Target="[System64Folder]cmd.exe"
+                            Arguments="/k cd /d &quot;[netspecificdir]&quot;"
+                            WorkingDirectory="netspecificdir"
+                            Show="normal"/>
+
+                        <Shortcut Id="NodeStatusWatch" Name="Node Status Watch" 
+                            Target="[System64Folder]cmd.exe"
+                            Arguments="/k &quot;&quot;[netspecificdir]goal.exe&quot; node status -w 1000 -d &quot;[NodeDataDirAlgorandDataNetSpecific2]&quot;&quot;"
+                            WorkingDirectory="netspecificdir"
+                            Show="normal"/>
+
+                        <Shortcut Id="Config" Name="Node Configuration" 
+                            Target="[System64Folder]notepad.exe"
+                            Arguments="&quot;[NodeDataDirAlgorandDataNetSpecific]config.json&quot;"
+                            WorkingDirectory="NodeDataDirAlgorandDataNetSpecific"
+                            Show="normal"/>
+
+                        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+                        <RegistryValue Root="HKCU" Key="Software\Algorand\Node\$(var.NETWORK)" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+                    </Component>
+                </Directory>
+            </Directory>
+
+            <Directory Id='ProgramFiles64Folder' Name='PFiles'>
+                <Directory Id='INSTALLDIR' Name='Algorand'>
+                <Directory Id='common' Name='Common'>
+                    <Directory Id='commonbin' Name='Bin'>
+
+                    <!-- algodsvc Service Setup -->
+
+                    <Component Id='AlgorandNodeService' Guid="244f1bfb-7ceb-4c05-b6b4-9dd1f7a5f88d">
+                        <ServiceInstall
+                            Id="AlgodsvcInstaller"
+                            Type="ownProcess"
+                            Name="algodsvc_$(var.NETWORK)"
+                            DisplayName="Algorand Node Service ($(var.NETWORK))"
+                            Description="Controller service for the Algorand node daemon (algod) under $(var.NETWORK) network"
+                            Start="demand"
+                            Account= "NT Authority\NetworkService"
+                            Arguments="$(var.NETWORK) &quot;[netspecificdir]algod.exe&quot;  &quot;[NodeDataDirAlgorandDataNetSpecific]" 
+                            ErrorControl="normal"/>
+                        <ServiceControl Id="Sc_AlgodSvc" Name="algodsvc_$(var.NETWORK)" Remove="uninstall" Stop="both" Wait="yes"/> 
+                        <File Id="algodsvc" Name="algodsvc.exe" DiskId="1" Source="$(var.SVCBINFOLDER)/algodsvc.exe" KeyPath="yes" />
+                        <RegistryKey Key="SYSTEM\CurrentControlSet\Services\EventLog\Application\Algorand Node Service" Root="HKLM">
+                            <RegistryValue Id="REG_EvMsgFile" Type="string" Name="EventMessageFile" Value="[commonbin]algodsvc.exe" />
+                        </RegistryKey>
+                    </Component>
+                    </Directory>
+                </Directory>
+
+                <!-- Binary tool  directory setup -->
+
+                <Directory Id='netspecificdir' Name='$(var.NETWORK)'>
+                    <Component Id='BINCOMP_algocfg' Guid='*'>
+                        <File Id="algocfg" Name="algocfg.exe" DiskId="1" Source="$(var.GOBINFOLDER)/algocfg.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_algod' Guid='*'>
+                        <File Id="algod" Name="algod.exe" DiskId="1" Source="$(var.GOBINFOLDER)/algod.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_algoh' Guid='*'>
+                        <File Id="algoh" Name="algoh.exe" DiskId="1" Source="$(var.GOBINFOLDER)/algoh.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_algokey' Guid='*'>
+                        <File Id="algokey" Name="algokey.exe" DiskId="1" Source="$(var.GOBINFOLDER)/algokey.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_algons' Guid='*'>
+                        <File Id="algons" Name="algons.exe" DiskId="1" Source="$(var.GOBINFOLDER)/algons.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_algorelay' Guid='*'>
+                        <File Id="algorelay" Name="algorelay.exe" DiskId="1" Source="$(var.GOBINFOLDER)/algorelay.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_algotmpl' Guid='*'>
+                        <File Id="algotmpl" Name="algotmpl.exe" DiskId="1" Source="$(var.GOBINFOLDER)/algotmpl.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_auctionbank' Guid='*'>
+                        <File Id="auctionbank" Name="auctionbank.exe" DiskId="1" Source="$(var.GOBINFOLDER)/auctionbank.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_auctionconsole' Guid='*'>
+                        <File Id="auctionconsole" Name="auctionconsole.exe" DiskId="1" Source="$(var.GOBINFOLDER)/auctionconsole.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_auctionmaster' Guid='*'>
+                        <File Id="auctionmaster" Name="auctionmaster.exe" DiskId="1" Source="$(var.GOBINFOLDER)/auctionmaster.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_auctionminion' Guid='*'>
+                        <File Id="auctionminion" Name="auctionminion.exe" DiskId="1" Source="$(var.GOBINFOLDER)/auctionminion.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_buildtools' Guid='*'>
+                        <File Id="buildtools" Name="buildtools.exe" DiskId="1" Source="$(var.GOBINFOLDER)/buildtools.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_carpenter' Guid='*'>
+                        <File Id="carpenter" Name="carpenter.exe" DiskId="1" Source="$(var.GOBINFOLDER)/carpenter.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_catchpointCatchupWebProxy' Guid='*'>
+                        <File Id="catchpointCatchupWebProxy" Name="catchpointCatchupWebProxy.exe" DiskId="1" Source="$(var.GOBINFOLDER)/catchpointCatchupWebProxy.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_catchpointdump' Guid='*'>
+                        <File Id="catchpointdump" Name="catchpointdump.exe" DiskId="1" Source="$(var.GOBINFOLDER)/catchpointdump.exe" KeyPath="yes" />
+                   </Component>
+                    <Component Id='BINCOMP_catchupsrv' Guid='*'>
+                        <File Id="catchupsrv" Name="catchupsrv.exe" DiskId="1" Source="$(var.GOBINFOLDER)/catchupsrv.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_cc_agent' Guid='*'>
+                        <File Id="cc_agent" Name="cc_agent.exe" DiskId="1" Source="$(var.GOBINFOLDER)/cc_agent.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_cc_client' Guid='*'>
+                        <File Id="cc_client" Name="cc_client.exe" DiskId="1" Source="$(var.GOBINFOLDER)/cc_client.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_cc_service' Guid='*'>
+                        <File Id="cc_service" Name="cc_service.exe" DiskId="1" Source="$(var.GOBINFOLDER)/cc_service.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_cdtmock' Guid='*'>
+                        <File Id="cdtmock" Name="cdtmock.exe" DiskId="1" Source="$(var.GOBINFOLDER)/cdtmock.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='COMP_COPYING' Guid='*'>
+                        <File Id="COPYING" Name="COPYING" DiskId="1" Source="$(var.GOBINFOLDER)/COPYING" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_coroner' Guid='*'>
+                        <File Id="coroner" Name="coroner.exe" DiskId="1" Source="$(var.GOBINFOLDER)/coroner.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_dbgen' Guid='*'>
+                        <File Id="dbgen" Name="dbgen.exe" DiskId="1" Source="$(var.GOBINFOLDER)/dbgen.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='SCRIPTCOMP_ddconfig' Guid='*'>
+                        <File Id="ddconfig" Name="ddconfig.sh" DiskId="1" Source="$(var.GOBINFOLDER)/ddconfig.sh" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_defaultsGenerator' Guid='*'>
+                        <File Id="defaultsGenerator" Name="defaultsGenerator.exe" DiskId="1" Source="$(var.GOBINFOLDER)/defaultsGenerator.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_diagcfg' Guid='*'>
+                        <File Id="diagcfg" Name="diagcfg.exe" DiskId="1" Source="$(var.GOBINFOLDER)/diagcfg.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_dispenser' Guid='*'>
+                        <File Id="dispenser" Name="dispenser.exe" DiskId="1" Source="$(var.GOBINFOLDER)/dispenser.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_doberman' Guid='*'>
+                        <File Id="doberman" Name="doberman.exe" DiskId="1" Source="$(var.GOBINFOLDER)/doberman.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_dsign' Guid='*'>
+                        <File Id="dsign" Name="dsign.exe" DiskId="1" Source="$(var.GOBINFOLDER)/dsign.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='SCRIPTCOMP_findnodes' Guid='*'>
+                        <File Id="findnodes" Name="find-nodes.sh" DiskId="1" Source="$(var.GOBINFOLDER)/find-nodes.sh" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_genconsensusconfig' Guid='*'>
+                        <File Id="genconsensusconfig" Name="genconsensusconfig.exe" DiskId="1" Source="$(var.GOBINFOLDER)/genconsensusconfig.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_genesis' Guid='*'>
+                        <File Id="genesis" Name="genesis.exe" DiskId="1" Source="$(var.GOBINFOLDER)/genesis.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_goal' Guid='*'>
+                        <File Id="goal" Name="goal.exe" DiskId="1" Source="$(var.GOBINFOLDER)/goal.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_golint' Guid='*'>
+                        <File Id="golint" Name="golint.exe" DiskId="1" Source="$(var.GOBINFOLDER)/golint.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_incorporate' Guid='*'>
+                        <File Id="incorporate" Name="incorporate.exe" DiskId="1" Source="$(var.GOBINFOLDER)/incorporate.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_kmd' Guid='*'>
+                        <File Id="kmd" Name="kmd.exe" DiskId="1" Source="$(var.GOBINFOLDER)/kmd.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_msgp' Guid='*'>
+                        <File Id="msgp" Name="msgp.exe" DiskId="1" Source="$(var.GOBINFOLDER)/msgp.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_msgpacktool' Guid='*'>
+                        <File Id="msgpacktool" Name="msgpacktool.exe" DiskId="1" Source="$(var.GOBINFOLDER)/msgpacktool.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_netdummy' Guid='*'>
+                        <File Id="netdummy" Name="netdummy.exe" DiskId="1" Source="$(var.GOBINFOLDER)/netdummy.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_netgoal' Guid='*'>
+                        <File Id="netgoal" Name="netgoal.exe" DiskId="1" Source="$(var.GOBINFOLDER)/netgoal.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_nodecfg' Guid='*'>
+                        <File Id="nodecfg" Name="nodecfg.exe" DiskId="1" Source="$(var.GOBINFOLDER)/nodecfg.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_node_exporter' Guid='*'>
+                        <File Id="node_exporter" Name="node_exporter" DiskId="1" Source="$(var.GOBINFOLDER)/node_exporter" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_opdoc' Guid='*'>
+                        <File Id="opdoc" Name="opdoc.exe" DiskId="1" Source="$(var.GOBINFOLDER)/opdoc.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_pingpong' Guid='*'>
+                        <File Id="pingpong" Name="pingpong.exe" DiskId="1" Source="$(var.GOBINFOLDER)/pingpong.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_puppeteer' Guid='*'>
+                        <File Id="puppeteer" Name="puppeteer.exe" DiskId="1" Source="$(var.GOBINFOLDER)/puppeteer.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_relaycheck' Guid='*'>
+                        <File Id="relaycheck" Name="relay-check.exe" DiskId="1" Source="$(var.GOBINFOLDER)/relay-check.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_stringer' Guid='*'>
+                        <File Id="stringer" Name="stringer.exe" DiskId="1" Source="$(var.GOBINFOLDER)/stringer.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_swagger' Guid='*'>
+                        <File Id="swagger" Name="swagger.exe" DiskId="1" Source="$(var.GOBINFOLDER)/swagger.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_tealcut' Guid='*'>
+                        <File Id="tealcut" Name="tealcut.exe" DiskId="1" Source="$(var.GOBINFOLDER)/tealcut.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_tealdbg' Guid='*'>
+                        <File Id="tealdbg" Name="tealdbg.exe" DiskId="1" Source="$(var.GOBINFOLDER)/tealdbg.exe" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_update' Guid='*'>
+                        <File Id="update" Name="update.sh" DiskId="1" Source="$(var.GOBINFOLDER)/update.sh" KeyPath="yes" />
+                    </Component>
+                    <Component Id='BINCOMP_updater' Guid='*'>
+                        <File Id="updater" Name="updater.exe" DiskId="1" Source="$(var.GOBINFOLDER)/updater.exe" KeyPath="yes" />
+                    </Component>
+                </Directory>
+                </Directory>
+            </Directory>
+        </Directory>
+
+        <Feature Id='Complete' Level='1'>
+            <ComponentRef Id='genesisfile' />
+            <ComponentRef Id='configfile' />
+            <ComponentRef Id='AlgorandNodeService'/>
+            <ComponentRef Id='BINCOMP_algocfg' />
+            <ComponentRef Id='BINCOMP_algod'/>
+            <ComponentRef Id='BINCOMP_algoh'/>
+            <ComponentRef Id='BINCOMP_algokey' />
+            <ComponentRef Id='BINCOMP_algons' />
+            <ComponentRef Id='BINCOMP_algorelay' />
+            <ComponentRef Id='BINCOMP_algotmpl' />
+            <ComponentRef Id='BINCOMP_auctionbank'/>
+            <ComponentRef Id='BINCOMP_auctionconsole'/>
+            <ComponentRef Id='BINCOMP_auctionmaster' />
+            <ComponentRef Id='BINCOMP_auctionminion' />
+            <ComponentRef Id='BINCOMP_buildtools' />
+            <ComponentRef Id='BINCOMP_carpenter' />
+            <ComponentRef Id='BINCOMP_catchpointCatchupWebProxy' />
+            <ComponentRef Id='BINCOMP_catchpointdump' />
+            <ComponentRef Id='BINCOMP_catchupsrv' />
+            <ComponentRef Id='BINCOMP_cc_agent' />
+            <ComponentRef Id='BINCOMP_cc_client' />
+            <ComponentRef Id='BINCOMP_cc_service' />
+            <ComponentRef Id='BINCOMP_cdtmock' />
+            <ComponentRef Id='COMP_COPYING' />
+            <ComponentRef Id='BINCOMP_coroner' />
+            <ComponentRef Id='BINCOMP_dbgen' />
+            <ComponentRef Id='SCRIPTCOMP_ddconfig'/>
+            <ComponentRef Id='BINCOMP_defaultsGenerator' />
+            <ComponentRef Id='BINCOMP_diagcfg' />
+            <ComponentRef Id='BINCOMP_dispenser'/>
+            <ComponentRef Id='BINCOMP_doberman' />
+            <ComponentRef Id='BINCOMP_dsign' />
+            <ComponentRef Id='SCRIPTCOMP_findnodes'/>
+            <ComponentRef Id='BINCOMP_genconsensusconfig' />
+            <ComponentRef Id='BINCOMP_genesis'/>
+            <ComponentRef Id='BINCOMP_goal' />
+            <ComponentRef Id='BINCOMP_golint'/>
+            <ComponentRef Id='BINCOMP_incorporate'/>
+            <ComponentRef Id='BINCOMP_kmd' />
+            <ComponentRef Id='BINCOMP_msgp' />
+            <ComponentRef Id='BINCOMP_msgpacktool'/>
+            <ComponentRef Id='BINCOMP_netdummy'/>
+            <ComponentRef Id='BINCOMP_netgoal' />
+            <ComponentRef Id='BINCOMP_nodecfg' />
+            <ComponentRef Id='BINCOMP_node_exporter'/>
+            <ComponentRef Id='BINCOMP_opdoc' />
+            <ComponentRef Id='BINCOMP_pingpong'/>
+            <ComponentRef Id='BINCOMP_puppeteer'/>
+            <ComponentRef Id='BINCOMP_relaycheck'/>
+            <ComponentRef Id='BINCOMP_stringer' />
+            <ComponentRef Id='BINCOMP_swagger' />
+            <ComponentRef Id='BINCOMP_tealcut' />
+            <ComponentRef Id='BINCOMP_tealdbg' />
+            <ComponentRef Id='BINCOMP_update' />
+            <ComponentRef Id='BINCOMP_updater' />
+            <ComponentRef Id='AlgorandShortcuts' />
+        </Feature>
+    </Product>
+</Wix>
+
