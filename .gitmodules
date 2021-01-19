@@ -1,0 +1,3 @@
+[submodule "go-algorand"]
+	path = go-algorand
+	url = https://github.com/algorand/go-algorand
