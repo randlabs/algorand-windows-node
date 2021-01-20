@@ -14,7 +14,7 @@ MSI=AlgorandNode-$(NETWORK).msi
 CANDLE=$(WIX)bin\candle.exe
 LIGHT=$(WIX)bin\light.exe
 GOBINFOLDER=$(HOME)/go/bin
-SVCBINFOLDER=../../windows/algodsvc
+SVCBINFOLDER=../../algodsvc
 
 all: $(OBJ) $(MSI)
 

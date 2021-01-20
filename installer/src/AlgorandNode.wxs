@@ -49,8 +49,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <?error Required SVCBINFOLDER variable not set ?>
     <?endif ?>
 
-    <?define GENESISFILE = '../genesis/$(var.NETWORK)/genesis.json' ?>
-    <?define SAMPLECONFIGFILE = '../config.json.example' ?>
+    <?define GENESISFILE = '../../go-algorand/installer/genesis/$(var.NETWORK)/genesis.json' ?>
+    <?define SAMPLECONFIGFILE = '../../go-algorand/installer/config.json.example' ?>
 
     <Product Name='Algorand Node ($(var.NETWORK))' Manufacturer='Algorand Foundation'
         Id="$(var.PRODUCTID)"
