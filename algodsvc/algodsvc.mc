@@ -69,14 +69,14 @@ Language=English
 Algorand Node Service could not start. Invalid network parameter (%1) must be testnet, mainnet or betanet.
 .
 
-MessageId=3007
+MessageId=3008
 Severity=Error
 SymbolicName=MSG_ALGODSVC_INVALIDNODEDATADIR
 Language=English
 Algorand Node Service could not start. Invalid, non existent or non-accesible node data directory specified (%1).
 .
 
-MessageId=3008
+MessageId=3009
 Severity=Informational
 SymbolicName=MSG_ALGODSVC_PREFLIGHTCONFIGDATA
 Language=English
