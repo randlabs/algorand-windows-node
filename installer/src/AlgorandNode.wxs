@@ -52,14 +52,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <?define GENESISFILE = '../../go-algorand/installer/genesis/$(var.NETWORK)/genesis.json' ?>
     <?define SAMPLECONFIGFILE = '../../go-algorand/installer/config.json.example' ?>
 
-    <Product Name='Algorand Node ($(var.NETWORK))' Manufacturer='Algorand Foundation'
+    <Product Name='Algorand Node for Windows ($(var.NETWORK))' Manufacturer='Rand Labs'
         Id="$(var.PRODUCTID)"
         UpgradeCode="$(var.FULLUPGRADECODE)"
         Language='1033' Codepage='1252' Version='1.0.0'>
         <Package Id='*' Keywords='Installer' Description="Algorand Node Installer for Windows ($(var.NETWORK))"
             InstallScope="perMachine"
             Manufacturer='Rand Labs'
-            Comments='2021 Algorand llc' 
+            Comments='(c) Rand Labs, AGPL3 Licensed.' 
             InstallerVersion='500'
             Languages='1033'
             Compressed='yes'
@@ -70,7 +70,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />      
 
         <!-- Windows installer Add/remove programs properties -->
-        <Property Id="ARPHELPLINK" Value="https://www.algorand.com" />
+        <Property Id="ARPHELPLINK" Value="https://randlabs.io" />
         <Property Id="ARPPRODUCTICON" Value="AlgoIconBlack.ico" />
         <Icon Id="AlgoIconBlack.ico" SourceFile="res\AlgoIconBlack.ico"/>
 

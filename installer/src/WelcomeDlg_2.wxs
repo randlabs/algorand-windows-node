@@ -15,23 +15,26 @@
                 <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="!(loc.WelcomeDlgBitmap)" />
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="!(loc.WixUIBack)" />
                 <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
-                <Control Id="Description" Type="Text" X="135" Y="45" Width="220" Height="60" Transparent="yes" NoPrefix="yes" 
+                <Control Id="Description" Type="Text" X="135" Y="85" Width="220" Height="60" Transparent="yes" NoPrefix="yes" 
                 Text="This wizard will guide you in the installation of your Algorand Node and companion tools in your system.">
                     <Condition Action="show">NOT Installed OR NOT PATCH</Condition>
                     <Condition Action="hide">Installed AND PATCH</Condition>
                 </Control>
-                <Control Id="Description2" Type="Text" X="135" Y="85" Width="220" Height="60" Transparent="yes" NoPrefix="yes" 
-                Text="Developed by Rand Labs with the support of Algorand Foundation. Follow the links below to visit us.">
+                <Control Id="Description2" Type="Text" X="135" Y="180" Width="220" Height="60" Transparent="yes" NoPrefix="yes" 
+                Text="Adapted by Rand Labs with the support of Algorand Foundation. Algorand Node developed by Algorand Inc." >
                     <Condition Action="show">NOT Installed OR NOT PATCH</Condition>
                     <Condition Action="hide">Installed AND PATCH</Condition>
                 </Control>
-                <Control Id="Link1" Type="Hyperlink" X="135" Y="120" Width="220" Height="60" Transparent="yes"  >
-                    <Text><![CDATA[<a href="https://randlabs.io/">https://randlabs.io/</a>]]></Text>
+                <Control Id="Link1" Type="Hyperlink" X="135" Y="210" Width="100" Height="20" Transparent="yes"  >
+                    <Text><![CDATA[<a href="https://randlabs.io/">randlabs.io</a>]]></Text>
                 </Control>
-                <Control Id="Link2" Type="Hyperlink" X="135" Y="140" Width="220" Height="60" Transparent="yes"  >
-                    <Text><![CDATA[<a href="www.algorand.com">https://www.algorand.com/</a>]]></Text>
+                <Control Id="Link2" Type="Hyperlink" X="190" Y="210" Width="100" Height="20" Transparent="yes"  >
+                    <Text><![CDATA[<a href="https://algorand.foundation/ ">algorand.foundation</a>]]></Text>
                 </Control>
-                <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Welcome to the Algorand Node Setup" />
+                <Control Id="Link3" Type="Hyperlink" X="290" Y="210" Width="100" Height="20" Transparent="yes"  >
+                    <Text><![CDATA[<a href="https://www.algorand.com">algorand.com</a>]]></Text>
+                </Control>
+                <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Welcome to the Algorand Node for Windows Setup" />
             </Dialog>
 
             <InstallUISequence>
