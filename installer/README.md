@@ -21,34 +21,6 @@ How to build
 
     The build process should take a while.  It will generate a MSI installer named  `algorand-node-testnet.msi`  or similar depending on your chosen Algorand network.
 
-Installation
-------------
-
-> :warning: 32-bit Windows is not supported by the installer.
-
-To launch the installation process just double click the MSI file, accept the license agreement and wait for the installer to finish.  
-The installer will create:
-
-* A new windows Service (algodsvc) for controlling the Algorand Node.
-* "Command Line Tools" shortcut to access the binary directory where all the Algorand tools reside.
-* A shortcut to the configuration text file.
-* A shortcut to watch the node status in realtime.
-
-Configuration
--------------
-
-Please click  the "Configuration" shortcut in your Start Menu, under the "Algorand Node" group, to start the proper `config.json` file. You need at least to modify two entries for a successful bootup of your node:
-
-* `DNSBootstrapID`:  set to `betanet.algorand.network`, `mainnet.algorand.network` or `testnet.algorand.network` depending on your chosen node network type.
-* `EndpointAddress `: set to local host and port you would like to use (`127.0.0.1:8080` for example).  Keep in mind that you may need to setup your firewall depending on the port number.
-
-Save the configuration file and start the Algorand Service by using the "Services" control panel. You can launch the "Run..." panel by pressing Windows + R and executing `services.msc`. Alternatively, you can use the `sc start algodsvc` command in a shell with administrative privileges.
-
-Monitoring
-----------
-
-The service and controlled-node operation can be monitored using the Node Watch tool and/or the Event Viewer.
-
 License
 -------
 
