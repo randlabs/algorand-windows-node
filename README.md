@@ -65,8 +65,6 @@ to generate the `algodsvc.exe` binary file.
 
 ## Installation
 
-> :warning: 32-bit Windows is not supported by the installer.
-
 To launch the installation process just double click the MSI file, accept the license agreement and wait for the installer to finish.  
 The installer will create:
 
