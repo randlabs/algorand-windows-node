@@ -8,8 +8,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-SOURCES=AlgorandNode.wxs UI.wxs WelcomeDlg_2.wxs
-OBJ=AlgorandNode.wixobj WelcomeDlg_2.wixobj UI.wixobj
+SOURCES=AlgorandNode.wxs UI.wxs WelcomeDlg_2.wxs NodeConfigDlg.wxs
+OBJ=AlgorandNode.wixobj WelcomeDlg_2.wixobj UI.wixobj NodeConfigDlg.wixobj
 CANDLE=$(WIX)bin\candle.exe
 LIGHT=$(WIX)bin\light.exe
 GOBINFOLDER=$(HOME)/go/bin

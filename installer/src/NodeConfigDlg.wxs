@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (C) 2021 Rand Labs
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <UI>
+            <Dialog Id="NodeConfigDlg" Width="370" Height="270" Title="!(loc.WelcomeDlg_Title)">
+                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
+                    <Publish Property="WixUI_InstallMode" Value="Update">Installed AND PATCH</Publish>
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+                    <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+                </Control>
+                <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="!(loc.WelcomeDlgBitmap)" />
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="!(loc.WixUIBack)" />
+                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+                <Control Id="Description" Type="Text" X="135" Y="41" Width="220" Height="24" Transparent="yes" NoPrefix="yes" Text="Select the local port number where the node should listen on. Use 0 (zero) to let the node use a random port.">
+                </Control>
+                <Control Id="Description2" Type="Text" X="135" Y="131" Width="220" Height="29" Transparent="yes" NoPrefix="yes" Text="In archival mode the node will store the entire ledger instead of the last 1000 blocks. Setting a node to run in archival mode will increase the disk space requirements.">
+                </Control>
+                <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="14" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Node Configuration" />
+                <Control Type="CheckBox" CheckBoxValue="1" Id="chkArchival" Width="250" Height="17" X="135" Y="172" Text="Enable Archival Mode" Property="ENABLEARCHIVALMODE">
+                </Control>
+                <!-- <Control Type="Text" Id="CheckboxText" Width="190" Height="17" X="150" Y="172" Text="Enable Archival Mode" Transparent="yes" /> -->
+                <Control Type="Text" Id="Port" Width="40" Height="14" X="139" Y="71" Text="Port" Transparent="yes" />
+                <Control Type="Edit" Id="edtPortNumber"  Width="50" Height="15" X="172" Y="71" Property="PORTNUMBER" />
+            </Dialog>
+            <!-- <InstallUISequence>
+                <Show Dialog="NodeConfigDlg" Before="VerifyReadyDlg" Overridable="yes">NOT Installed</Show>
+            </InstallUISequence> -->
+        </UI>
+    </Fragment>
+</Wix>

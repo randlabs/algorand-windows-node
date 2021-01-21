@@ -55,6 +55,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <?define GENESISFILE = '../../go-algorand/installer/genesis/$(var.NETWORK)/genesis.json' ?>
     <?define SAMPLECONFIGFILE = '../../go-algorand/installer/config.json.example' ?>
 
+    <!-- Product definition starts here. -->
+
     <Product Name='Algorand Node for Windows ($(var.NETWORK))' Manufacturer='Rand Labs'
         Id="$(var.PRODUCTID)"
         UpgradeCode="$(var.FULLUPGRADECODE)"
@@ -69,6 +71,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             Compressed='yes'
             SummaryCodepage='1252' />
 
+        <!-- Configuration defaults -->
+
+        <Property Id="PORTNUMBER" Value="8111" Secure="yes"/>
+        <Property Id="ENABLEARCHIVALMODE"  Secure="yes"/>
         
         <Property Id="ApplicationFolderName" Value="AlgorandFolder" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />      
@@ -82,6 +88,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
          for the shortcut argument to cmd.exe /k goal.exe -d -->
 
         <CustomAction Id="RemoveTrailingSlash" Script="vbscript">
+        <![CDATA[         
+            value = Session.Property("NodeDataDirAlgorandDataNetSpecific")
+            If Right(value, 1) = "\" Then
+                value = Left(value, Len(value) - 1) 
+            End If
+            Session.Property("NodeDataDirAlgorandDataNetSpecific2") = value      
+        ]]>
+        </CustomAction>
+
+        <!-- CA to modify config file according to selected configuration -->
+        <CustomAction Id="ApplyConfigToFile" Script="vbscript">
         <![CDATA[         
             value = Session.Property("NodeDataDirAlgorandDataNetSpecific")
             If Right(value, 1) = "\" Then

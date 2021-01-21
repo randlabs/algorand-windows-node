@@ -31,7 +31,7 @@
                 <Control Id="Link2" Type="Hyperlink" X="190" Y="210" Width="100" Height="20" Transparent="yes"  >
                     <Text><![CDATA[<a href="https://algorand.foundation/ ">algorand.foundation</a>]]></Text>
                 </Control>
-                <Control Id="Link3" Type="Hyperlink" X="290" Y="210" Width="100" Height="20" Transparent="yes"  >
+                <Control Id="Link3" Type="Hyperlink" X="290" Y="210" Width="70" Height="20" Transparent="yes"  >
                     <Text><![CDATA[<a href="https://www.algorand.com">algorand.com</a>]]></Text>
                 </Control>
                 <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Welcome to the Algorand Node for Windows Setup" />
