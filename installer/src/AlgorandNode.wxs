@@ -48,6 +48,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <?ifndef SVCBINFOLDER ?>
         <?error Required SVCBINFOLDER variable not set ?>
     <?endif ?>
+    <?ifndef ALGOVERSION ?>
+        <?error Required ALGOVERSION variable not set ?>
+    <?endif ?>
 
     <?define GENESISFILE = '../../go-algorand/installer/genesis/$(var.NETWORK)/genesis.json' ?>
     <?define SAMPLECONFIGFILE = '../../go-algorand/installer/config.json.example' ?>
@@ -55,7 +58,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Product Name='Algorand Node for Windows ($(var.NETWORK))' Manufacturer='Rand Labs'
         Id="$(var.PRODUCTID)"
         UpgradeCode="$(var.FULLUPGRADECODE)"
-        Language='1033' Codepage='1252' Version='1.0.0'>
+        Language='1033' Codepage='1252' 
+        Version='$(var.ALGOVERSION)'>
         <Package Id='*' Keywords='Installer' Description="Algorand Node Installer for Windows ($(var.NETWORK))"
             InstallScope="perMachine"
             Manufacturer='Rand Labs'
