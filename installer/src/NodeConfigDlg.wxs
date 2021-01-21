@@ -28,16 +28,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="!(loc.WelcomeDlgBitmap)" />
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="!(loc.WixUIBack)" />
                 <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
-                <Control Id="Description" Type="Text" X="135" Y="41" Width="220" Height="24" Transparent="yes" NoPrefix="yes" Text="Select the local port number where the node should listen on. Use 0 (zero) to let the node use a random port.">
+                <Control Id="Description" Type="Text" X="135" Y="49" Width="220" Height="24" Transparent="yes" NoPrefix="yes" Text="Select the local port number where the node should listen on. Use 0 (zero) to let the node use a random port.">
                 </Control>
-                <Control Id="Description2" Type="Text" X="135" Y="131" Width="220" Height="29" Transparent="yes" NoPrefix="yes" Text="In archival mode the node will store the entire ledger instead of the last 1000 blocks. Setting a node to run in archival mode will increase the disk space requirements.">
+                <Control Id="Description2" Type="Text" X="135" Y="131" Width="220" Height="66" Transparent="yes" NoPrefix="yes" Text="In archival mode the node will store the entire ledger instead of the last 1000 blocks. Setting a node to run in archival mode will increase the disk space requirements.">
                 </Control>
                 <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="14" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Node Configuration" />
                 <Control Type="CheckBox" CheckBoxValue="1" Id="chkArchival" Width="250" Height="17" X="135" Y="172" Text="Enable Archival Mode" Property="ENABLEARCHIVALMODE">
                 </Control>
                 <!-- <Control Type="Text" Id="CheckboxText" Width="190" Height="17" X="150" Y="172" Text="Enable Archival Mode" Transparent="yes" /> -->
-                <Control Type="Text" Id="Port" Width="40" Height="14" X="139" Y="71" Text="Port" Transparent="yes" />
-                <Control Type="Edit" Id="edtPortNumber"  Width="50" Height="15" X="172" Y="71" Property="PORTNUMBER" />
+                <Control Type="Text" Id="Port" Width="40" Height="14" X="135" Y="79" Text="Port" Transparent="yes" />
+                <Control Type="Edit" Id="edtPortNumber" Width="50" Height="15" X="172" Y="79" Property="PORTNUMBER" />
             </Dialog>
             <!-- <InstallUISequence>
                 <Show Dialog="NodeConfigDlg" Before="VerifyReadyDlg" Overridable="yes">NOT Installed</Show>
