@@ -27,7 +27,16 @@ The two projects contained herein are:
     git submodule update
     ```
 
-  For additional information about working with git submodules see https://git-scm.com/book/en/v2/Git-Tools-Submodules
+    For additional information about working with git submodules see https://git-scm.com/book/en/v2/Git-Tools-Submodules
+
+    The installer mechanism uses the Algorand node versioning scheme for upgrades, so you need to select the release channel you want checking out the proper branch, e.g:
+
+    ```
+    cd go-algorand
+    git checkout rel/stable
+    ```
+
+    Replace `rel/stable` with `rel/nightly` or `rel/beta` if you want to make your installer based on 'bleeding-edge' or beta releases.
 
 * Start your MSYS2-MinGW x64 environment and follow the instructions in steps 1, 2 and 3 at https://developer.algorand.org/tutorials/compile-and-run-the-algorand-node-natively-windows to build the Algorand binaries, but **instead of cloning the go-algorand project, use the `go-algorand` subdirectory in this repository instead**.  
 
