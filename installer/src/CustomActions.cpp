@@ -73,7 +73,7 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
     wcsncat(szConfigFile, L"\\config.json", wcslen(L"\\config.json"));
     
     HANDLE hFile = CreateFileW(szConfigFile,
-                               GENERIC_READ,
+                               GENERIC_READ|GENERIC_WRITE,
                                0,
                                NULL,
                                OPEN_EXISTING,
@@ -101,39 +101,36 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
                 dprintfW(L"algorand-install-CA: ApplyConfigToFile Read %d bytes from config.json", dwBytesRead);
 
                 str.assign(buffer.get());
+                char wNetwork[8], wPort[8];
+                WideCharToMultiByte(CP_UTF8, 0, szNetwork, cchNetwork, wNetwork, 8, NULL, NULL);
+                WideCharToMultiByte(CP_UTF8, 0, szPortNum, cchPortNum, wPort, 8, NULL, NULL);
+                const std::string newDNSBootstrapID = std::string("\"").append(wNetwork).append(".algorand.network").append("\"");
+                const std::string newEndpointAddress = std::string("\"127.0.0.1:").append(wPort).append("\"");
+
+                dprintfW(L"algorand-install-CA: setting DNSBootstrapId status: %d",
+                         SetConfigEntry(str, "DNSBootstrapID", newDNSBootstrapID));
+
+                dprintfW(L"algorand-install-CA: setting EndpointAddress status: %d",
+                         SetConfigEntry(str, "EndpointAddress", newEndpointAddress));
+
+                dprintfW(L"algorand-install-CA: setting Archival status: %d",
+                         SetConfigEntry(str, "Archival", wcscmp(szEnableArchival, L"1") == 0 ? "true" : "false"));
+
+                SetFilePointer(hFile, 0, 0, FILE_BEGIN);
+                if (!WriteFile(hFile, str.c_str(), str.size(), &dwBytesWritten, NULL))
+                    status = GetLastError();
+
+                dprintfW(L"algorand-install-CA: ApplyConfigToFile Write %d bytes to config.json", dwBytesRead);
+
+                FlushFileBuffers(hFile);
+            }
+            else 
+            {
+                status = GetLastError(); 
             }
         }
-        CloseHandle(hFile);
-
-        char wNetwork[8], wPort[8];
-        WideCharToMultiByte(CP_UTF8, 0, szNetwork, cchNetwork, wNetwork, 8, NULL, NULL);
-        WideCharToMultiByte(CP_UTF8, 0, szPortNum, cchPortNum, wPort, 8, NULL, NULL);
-        const std::string newDNSBootstrapID = std::string("\"").append(wNetwork).append(".algorand.network").append("\"");
-        const std::string newEndpointAddress = std::string("\"127.0.0.1:").append(wPort).append("\"");
-
-        dprintfW(L"algorand-install-CA: setting DNSBootstrapId status: %d", 
-            SetConfigEntry(str, "DNSBootstrapID", newDNSBootstrapID));
-
-        dprintfW(L"algorand-install-CA: setting EndpointAddress status: %d", 
-            SetConfigEntry(str, "EndpointAddress", newEndpointAddress));
-
-        dprintfW(L"algorand-install-CA: setting Archival status: %d", 
-            SetConfigEntry(str, "Archival", wcscmp(szEnableArchival, L"1") == 0 ? "true" : "false"));
-
-        hFile = CreateFileW(szConfigFile,
-                            GENERIC_WRITE,
-                            0,
-                            NULL,
-                            OPEN_EXISTING,
-                            FILE_ATTRIBUTE_NORMAL,
-                            NULL);
-
-        if (!WriteFile(hFile, str.c_str(), str.size(), &dwBytesWritten, NULL))
-            status = GetLastError();
-
-        dprintfW(L"algorand-install-CA: ApplyConfigToFile Write %d bytes to config.json", dwBytesRead);
     }
-    
+
     CloseHandle(hFile);
     
     dprintfW(L"algorand-install-CA: ApplyConfigToFile Exiting with status %d", status);
