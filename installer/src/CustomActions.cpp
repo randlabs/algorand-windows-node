@@ -46,7 +46,7 @@ extern "C" UINT EXPORT RemoveTrailingSlash (MSIHANDLE hInstall)
     if (szNodeDataDir[wcslen(szNodeDataDir) - 1] == L'\\' && wcslen(szNodeDataDir) > 3) 
         szNodeDataDir[wcslen(szNodeDataDir) - 1] = (wchar_t)0;
 
-    MsiSetPropertyW(hInstall, L"NodeDataDirAlgorandDataNetSpecific", szNodeDataDir);
+    MsiSetPropertyW(hInstall, L"NodeDataDirAlgorandDataNetSpecific2", szNodeDataDir);
     return ERROR_SUCCESS;
 }
 
