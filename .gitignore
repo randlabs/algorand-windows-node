@@ -9,3 +9,4 @@
 /installer/src/*.msi
 /installer/src/*.wixpdb
 /installer/src/cabs
+/installer/src/*.dll

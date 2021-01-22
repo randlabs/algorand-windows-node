@@ -71,6 +71,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             Compressed='yes'
             SummaryCodepage='1252' />
 
+        <!-- Restrict conditions -->
+
+        <Condition Message='This installation can only run in full UI mode.'><![CDATA[UILevel = 5]]></Condition>
+        <Condition Message="This application is only supported on Windows 8 or higher."><![CDATA[VersionNT >= 602]]></Condition>
+        <Condition Message="[ProductName] cannot be installed on a 32-bit operating system."><![CDATA[VersionNT64]]></Condition>
+
         <!-- Configuration defaults -->
 
         <Property Id="PORTNUMBER" Value="8111" Secure="yes"/>
@@ -83,38 +89,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Property Id="ARPHELPLINK" Value="https://randlabs.io" />
         <Property Id="ARPPRODUCTICON" Value="AlgoIconBlack.ico" />
         <Icon Id="AlgoIconBlack.ico" SourceFile="res\AlgoIconBlack.ico"/>
+        
+        <!-- CAs -->
+        <Binary Id="CaDll" SourceFile="CustomActions.dll" />
 
         <!-- This CA just strips the trailing slash as a workaround
          for the shortcut argument to cmd.exe /k goal.exe -d -->
-
-        <CustomAction Id="RemoveTrailingSlash" Script="vbscript">
-        <![CDATA[         
-            value = Session.Property("NodeDataDirAlgorandDataNetSpecific")
-            If Right(value, 1) = "\" Then
-                value = Left(value, Len(value) - 1) 
-            End If
-            Session.Property("NodeDataDirAlgorandDataNetSpecific2") = value      
-        ]]>
-        </CustomAction>
+        <CustomAction Id='RemoveTrailingSlash' BinaryKey='CaDll' DllEntry='RemoveTrailingSlash' />
 
         <!-- CA to modify config file according to selected configuration -->
-        <CustomAction Id="ApplyConfigToFile" Script="vbscript">
-        <![CDATA[         
-            value = Session.Property("NodeDataDirAlgorandDataNetSpecific")
-            If Right(value, 1) = "\" Then
-                value = Left(value, Len(value) - 1) 
-            End If
-            Session.Property("NodeDataDirAlgorandDataNetSpecific2") = value      
-        ]]>
-        </CustomAction>
+        <CustomAction Id='ApplyConfigToFile'   BinaryKey='CaDll' DllEntry='ApplyConfigToFile' />
 
         <InstallExecuteSequence>
             <Custom Action="RemoveTrailingSlash" After="CostFinalize">NOT REMOVE</Custom>
+            <Custom Action="ApplyConfigToFile" After="InstallFinalize">NOT Installed</Custom>
         </InstallExecuteSequence>
-
-        <Condition Message="This application is only supported on Windows 8 or higher."><![CDATA[VersionNT >= 602]]></Condition>
-        <Condition Message="[ProductName] cannot be installed on a 32-bit operating system."><![CDATA[VersionNT64]]></Condition>
-
+        
         <Media Id='1' Cabinet='Algorand_$(var.NETWORK).cab' EmbedCab='yes' DiskPrompt='Disk 1' />
         <Property Id='DiskPrompt' Value="Algorand Node Installer Media" />
 
