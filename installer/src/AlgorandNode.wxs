@@ -73,7 +73,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Restrict conditions -->
 
-        <Condition Message='This installation can only run in full UI mode.'><![CDATA[UILevel = 5]]></Condition>
+        <!-- <Condition Message='This installation can only run in full UI mode.'><![CDATA[UILevel = 5]]></Condition> -->
         <Condition Message="This application is only supported on Windows 8 or higher."><![CDATA[VersionNT >= 602]]></Condition>
         <Condition Message="[ProductName] cannot be installed on a 32-bit operating system."><![CDATA[VersionNT64]]></Condition>
 
@@ -81,11 +81,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <Property Id="PORTNUMBER" Value="8111" Secure="yes"/>
         <Property Id="ENABLEARCHIVALMODE"  Secure="yes"/>
+        <Property Id="THISNETWORK" Value="$(var.NETWORK)" Secure="yes"/>
         
         <Property Id="ApplicationFolderName" Value="AlgorandFolder" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />      
 
         <!-- Windows installer Add/remove programs properties -->
+
         <Property Id="ARPHELPLINK" Value="https://randlabs.io" />
         <Property Id="ARPPRODUCTICON" Value="AlgoIconBlack.ico" />
         <Icon Id="AlgoIconBlack.ico" SourceFile="res\AlgoIconBlack.ico"/>
