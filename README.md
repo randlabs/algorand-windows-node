@@ -74,25 +74,32 @@ to generate the `algodsvc.exe` binary file.
 
 ## Installation
 
-To launch the installation process just double click the MSI file, accept the license agreement, choose your base directory, configure your node with your desired options  and wait for the installer to finish.  
+To launch the installation process just double click the MSI file, accept the license agreement, choose your base directory, configure your node with your desired options (port and archival mode) and wait for the installer to finish.  
+
+At finish, the installer defaults to start automatically the Algorand Node service.
+
 The installer will create:
 
-* A new windows Service (algodsvc) for controlling the Algorand Node.
+* A new windows Service (algodsvc) for controlling the Algorand Node. The name of the service is `algodsvc_` followed by  the network the node is connected to. According to this scheme, your service will be named `algodsvc_testnet`, `algodsvc_betanet` or `algodsvc_mainnet`. 
 * "Command Line Tools" shortcut to access the binary directory where all the Algorand tools reside.
 * A shortcut to the configuration text file.
 * A shortcut to watch the node status in realtime.
 
+At this stage you should be able to click on "Node Status Watch" shortcut in your Start Menu to verify that you are synchronizing.
+
 ## Manual Configuration
 
-Please click  the "Configuration" shortcut in your Start Menu, under the "Algorand Node" group, to start the proper `config.json` file. 
+Please click  the "Configuration" shortcut in your Start Menu, under the "Algorand Node" group, to start the proper `config.json` file.  **To make the changes operative, please restart the Windows service**
 
 ## Usage
 
 ### Starting and stopping the node
 
+> :information: In the following examples, `service_name` 
+
 Start the Algorand Service by using the "Services" management console. You can launch the "Run..." panel by pressing Windows + R and executing `services.msc`. Alternatively, you can use the `sc start algodsvc` command in a shell with administrative privileges.
 
-The status of the service can be inspected with the Services management console, or by executing `sc query algodsvc` command in a shell with administrative privileges.
+The status of the service can be inspected with the Services management console, or by executing `sc query algodsvc_` command in a shell with administrative privileges.
 
 In the same way, stopping the node can be done  with the Services management console, or by executing `sc stop algodsvc` command in a shell with administrative privileges.
 
