@@ -95,13 +95,13 @@ Please click  the "Configuration" shortcut in your Start Menu, under the "Algora
 
 ### Starting and stopping the node
 
-> :information: In the following examples, `service_name` 
+> :memo: In the following examples, `service_name` is `algodsvc_` followed by  the network the node is connected to. According to this scheme, your service will be named `algodsvc_testnet`, `algodsvc_betanet` or `algodsvc_mainnet`. 
 
-Start the Algorand Service by using the "Services" management console. You can launch the "Run..." panel by pressing Windows + R and executing `services.msc`. Alternatively, you can use the `sc start algodsvc` command in a shell with administrative privileges.
+Start the Algorand Service by using the "Services" management console. You can launch the "Run..." panel by pressing Windows + R and executing `services.msc`. Alternatively, you can use the `sc start <service_name>` command in a shell with administrative privileges.
 
-The status of the service can be inspected with the Services management console, or by executing `sc query algodsvc_` command in a shell with administrative privileges.
+The status of the service can be inspected with the Services management console, or by executing `sc query <service_name>` command in a shell with administrative privileges.
 
-In the same way, stopping the node can be done  with the Services management console, or by executing `sc stop algodsvc` command in a shell with administrative privileges.
+In the same way, stopping the node can be done  with the Services management console, or by executing `sc stop <service_name>` command in a shell with administrative privileges.
 
 > :warning: Forcefully terminating the controlled ALGOD.EXE executable, either by user action or by fatal system error, will trigger the stopping of the Windows service. This will get reported to the Windows Event Log as a 3002 event.
 
