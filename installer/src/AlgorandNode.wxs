@@ -106,6 +106,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <!--- Other CAs Exports -->
         <CustomAction Id='ValidatePortNumber'           BinaryKey='CaDll' DllEntry='ValidatePortNumber' />
         <CustomAction Id='SetMsgDlgProp_InvalidPort'    BinaryKey='CaDll' DllEntry='SetMsgDlgProp_InvalidPort' />
+        <CustomAction Id='StartServiceOnExit'           BinaryKey='CaDll' DllEntry='StartServiceOnExit' />
 
         <InstallExecuteSequence>
             <Custom Action="RemoveTrailingSlash" After="CostFinalize">NOT REMOVE</Custom>

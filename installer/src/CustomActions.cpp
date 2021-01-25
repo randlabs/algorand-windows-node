@@ -71,6 +71,103 @@ extern "C" UINT EXPORT SetMsgDlgProp_InvalidPort (MSIHANDLE hInstall)
     return ERROR_SUCCESS;
 }
 
+static DWORD StartServiceRoutine (MSIHANDLE hInstall)
+{
+    auto hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    if (!hSCM)
+        return GetLastError();
+
+    wchar_t szNetwork[8];
+    DWORD cchNetwork = 8;
+    MsiGetPropertyW(hInstall, L"THISNETWORK", szNetwork, &cchNetwork);
+
+    if (  (wcsncmp(szNetwork, L"testnet" ,8) != 0)
+        && (wcsncmp(szNetwork, L"betanet" ,8) != 0)
+        && (wcsncmp(szNetwork,  L"mainnet" ,8) != 0))
+        {
+            dprintfW(L"algorand-install-CA: bad network name: %s", szNetwork);
+            return ERROR_INVALID_NETNAME;
+        }
+        
+    wchar_t szSvcName[32] = {0};
+    wcsncpy(szSvcName, L"algodsvc_", 9);
+    wcsncat(szSvcName, szNetwork, wcslen(szNetwork));
+
+    auto hService = OpenService(hSCM, szSvcName, SERVICE_ALL_ACCESS);
+    if(!hService)
+    {
+        return  GetLastError();
+        CloseServiceHandle(hSCM);
+    }
+
+    SERVICE_STATUS_PROCESS ssStatus; 
+    DWORD dwBytesNeeded = 0;
+    if(!QueryServiceStatusEx(hService, SC_STATUS_PROCESS_INFO, (LPBYTE) &ssStatus, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
+    {
+        dprintfW(L"algorand-install-CA: QueryServiceStatusEx failed (%d)\n", GetLastError());
+        CloseServiceHandle(hService); 
+        CloseServiceHandle(hSCM);
+        return GetLastError();
+    }
+
+    //
+    // We expect this to be stopped at this point.
+    //
+    if (ssStatus.dwCurrentState != SERVICE_STOPPED)
+    {
+        dprintfW(L"algorand-install-CA: Unexpected svc status (%d)\n", ssStatus.dwCurrentState);
+        CloseServiceHandle(hService); 
+        CloseServiceHandle(hSCM);
+        return ERROR_SERVICE_ALREADY_RUNNING;
+    }
+
+    DWORD cTime = 0;
+    const auto SLEEP_INTERVAL = 0;
+    const auto START_WAIT_LIMIT = 30*1000; // 30 secs.
+    if (StartService(hService, 0, NULL))
+    {
+        QueryServiceStatusEx(hService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssStatus, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded);
+
+        while (ssStatus.dwCurrentState == SERVICE_START_PENDING && cTime <= START_WAIT_LIMIT)
+        {
+            Sleep(SLEEP_INTERVAL);
+            cTime += SLEEP_INTERVAL;
+            QueryServiceStatusEx(hService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssStatus, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded);
+        }
+
+        if (ssStatus.dwCurrentState == SERVICE_RUNNING)
+        {
+            dprintfW(L"algorand-install-CA: StartService success.");
+        }
+        else
+        {
+            dprintfW(L"algorand-install-CA: Service did not pass to RUNNING state after %d ms.", START_WAIT_LIMIT);
+        }
+    }
+    else 
+    {
+        dprintfW(L"algorand-install-CA: StartService failed (%d)\n", ssStatus.dwCurrentState);
+    }
+
+    CloseServiceHandle(hService); 
+    CloseServiceHandle(hSCM);
+    return ERROR_SUCCESS;
+}
+
+extern "C" UINT EXPORT StartServiceOnExit (MSIHANDLE hInstall)
+{
+    wchar_t szIsChecked[4];
+    DWORD cchIsChecked = 4;
+    MsiGetPropertyW(hInstall, L"WIXUI_EXITDIALOGOPTIONALCHECKBOX", szIsChecked, &cchIsChecked);
+    
+    if (!wcsncmp(szIsChecked, L"1", 4))
+    {
+        return StartServiceRoutine(hInstall);
+    }
+
+    return ERROR_SUCCESS;
+}
+
 
 extern "C" UINT EXPORT RemoveTrailingSlash (MSIHANDLE hInstall) 
 {
