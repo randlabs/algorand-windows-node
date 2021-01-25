@@ -82,6 +82,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Property Id="PORTNUMBER" Value="8111" Secure="yes"/>
         <Property Id="ENABLEARCHIVALMODE"  Secure="yes"/>
         <Property Id="THISNETWORK" Value="$(var.NETWORK)" Secure="yes"/>
+
         
         <Property Id="ApplicationFolderName" Value="AlgorandFolder" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />      
@@ -101,6 +102,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <!-- CA to modify config file according to selected configuration -->
         <CustomAction Id='ApplyConfigToFile'   BinaryKey='CaDll' DllEntry='ApplyConfigToFile' />
+
+        <!--- Other CAs Exports -->
+        <CustomAction Id='ValidatePortNumber'           BinaryKey='CaDll' DllEntry='ValidatePortNumber' />
+        <CustomAction Id='SetMsgDlgProp_InvalidPort'    BinaryKey='CaDll' DllEntry='SetMsgDlgProp_InvalidPort' />
 
         <InstallExecuteSequence>
             <Custom Action="RemoveTrailingSlash" After="CostFinalize">NOT REMOVE</Custom>

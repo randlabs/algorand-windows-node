@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <memory>
 #include <string>
+#include <stdexcept>
 #include "dprintf.h"
 
 #define EXPORT __declspec(dllexport)
@@ -36,6 +37,40 @@ static DWORD SetConfigEntry(std::string& buffer, const std::string& key, const s
     buffer.insert(startReplace, value);
     return ERROR_SUCCESS;
 }
+
+
+extern "C" UINT EXPORT ValidatePortNumber (MSIHANDLE hInstall) 
+{
+    wchar_t szPortNum[8];
+    DWORD cchPortNum = 8;
+    MsiGetPropertyW(hInstall, L"PORTNUMBER", szPortNum, &cchPortNum);
+
+    try
+    {
+        int x = std::stoi(std::wstring(szPortNum));
+        if (x < 0 || x > 65535) 
+        {
+            throw( std::out_of_range("invalid port number"));
+        }
+        MsiSetPropertyW(hInstall, L"VALIDPORTNUMBER", L"1");
+    }
+    catch (std::exception& e)
+    {
+        MsiSetPropertyW(hInstall, L"VALIDPORTNUMBER", L"0");
+    }
+
+    return ERROR_SUCCESS;
+}
+
+extern "C" UINT EXPORT SetMsgDlgProp_InvalidPort (MSIHANDLE hInstall) 
+{
+    MsiSetPropertyW(hInstall, L"MESSAGEDLGTITLE", L"Information");
+    MsiSetPropertyW(hInstall, L"MESSAGEDLGHEADER", L"Invalid port");
+    MsiSetPropertyW(hInstall, L"MESSAGEDLGTEXT", L"Please enter a valid port number in the range from 0 to 65535.");
+    MsiSetPropertyW(hInstall, L"MESSAGEDLGICONID", L"StatusAlert");
+    return ERROR_SUCCESS;
+}
+
 
 extern "C" UINT EXPORT RemoveTrailingSlash (MSIHANDLE hInstall) 
 {
@@ -58,10 +93,10 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
     wchar_t szEnableArchival[10];
     wchar_t szPortNum[8];
     wchar_t szNetwork[8]; 
-    DWORD cchConfigFile = sizeof(szConfigFile) * sizeof(WCHAR);
-    DWORD cchEnableArchival = sizeof(szEnableArchival) * sizeof(WCHAR);
-    DWORD cchPortNum = sizeof(szPortNum) * sizeof(WCHAR);
-    DWORD cchNetwork = sizeof(szNetwork) * sizeof(WCHAR);
+    DWORD cchConfigFile = sizeof(szConfigFile) / sizeof(wchar_t);
+    DWORD cchEnableArchival = sizeof(szEnableArchival) / sizeof(wchar_t);
+    DWORD cchPortNum = sizeof(szPortNum) / sizeof(wchar_t);
+    DWORD cchNetwork = sizeof(szNetwork) / sizeof(wchar_t);
 
     MsiGetPropertyW(hInstall, L"NodeDataDirAlgorandDataNetSpecific", szConfigFile, &cchConfigFile);
     MsiGetPropertyW(hInstall, L"ENABLEARCHIVALMODE", szEnableArchival, &cchEnableArchival);

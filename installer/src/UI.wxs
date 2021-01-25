@@ -60,7 +60,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
 
             <Publish Dialog="NodeConfigDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg">NOT Installed</Publish>
-            <Publish Dialog="NodeConfigDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">NOT Installed</Publish>
+            <Publish Dialog="NodeConfigDlg" Control="Next" Event="DoAction"  Value="ValidatePortNumber" Order="1">1</Publish>
+            <Publish Dialog="NodeConfigDlg" Control="Next" Event="DoAction"  Value="SetMsgDlgProp_InvalidPort" Order="2">VALIDPORTNUMBER = "0"</Publish>
+            <Publish Dialog="NodeConfigDlg" Control="Next" Event="SpawnDialog"  Value="MessageDlg" Order="3">VALIDPORTNUMBER = "0"</Publish>
+            <Publish Dialog="NodeConfigDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="4">VALIDPORTNUMBER = "1"</Publish>
             
             <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="NodeConfigDlg" Order="1">NOT Installed</Publish>
             <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1">Installed</Publish>

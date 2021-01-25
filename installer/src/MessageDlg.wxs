@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (C) 2021 Rand Labs
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+
+        <!-- Message-dialog related properties -->
+        <Property Id="MESSAGEDLGTITLE" Value="(sample title)" Secure="yes"/>
+        <Property Id="MESSAGEDLGHEADER"  Value="(sample header)" Secure="yes"/>
+        <Property Id="MESSAGEDLGTEXT" Value="(sample text)" Secure="yes"/>
+        <Property Id="MESSAGEDLGICONID" Value="StatusInfo" Secure="yes"/>
+
+        <Binary Id="StatusCritical" SourceFile="res/StatusCritical.png" />
+        <Binary Id="StatusInfo" SourceFile="res/StatusInfo.png" />
+        <Binary Id="StatusAlert" SourceFile="res/StatusAlert.png" />
+
+        <UI>
+            <Dialog Id="MessageDlg" Width="370" Height="100" Title="[MESSAGEDLGTITLE]">
+                <Control Id="BottomLine" Type="Line" X="0" Y="71" Width="370" Height="2" />
+                <Control Id="Title" Type="Text" X="71" Y="11" Width="220" Height="14" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}[MESSAGEDLGHEADER]" />
+                <Control Type="PushButton" Id="btnOk" Width="56" Height="17" X="308" Y="79" Text="Ok" Default="yes">
+                    <Publish Event="EndDialog" Value="Return">1</Publish>
+                </Control>
+                <Control Type="Text" Id="txtMessage" Width="289" Height="24" X="71" Y="30" Text="[MESSAGEDLGTEXT]" />
+                <Control Type="Bitmap" Id="bmpIcon" Width="48" Height="48" X="11" Y="15" Text="[MESSAGEDLGICONID]"></Control>
+            </Dialog>
+        </UI>
+    </Fragment>
+</Wix>
