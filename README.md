@@ -4,6 +4,19 @@ This repository contains the supporting software for running an Algorand Node un
 
 > :warning: 32-bit Windows is not supported.
 
+## Preliminary Information 
+
+Please read the following usage guidelines and advices.
+
+* As they may have different binaries, testnet, betanet, mainnet packages are considered products on their own, so:
+
+    * Installations for different networks and/or versions can co exist in the same system.
+    * Upgrades can be performed *only* between packages of the same network node.  e.g: 2.2.0-testnet to 2.3.0-testnet.
+
+* Once the product is installed, do not modify the network it's operating on by changing the configuration file. Use the proper installer. 
+
+* Automatic downgrades are not supported. If you want to install a previous version, uninstall the current version completely first.
+
 ## Prerequisites
 
 To build the algorand node, service and installer you need  to install the following software distributions:
@@ -109,7 +122,7 @@ The node can be monitored using the "Node Watch tool". Access it by going to you
 
 ### Using the Windows Event Log
 
-Open the Event Log by pressing Windows + R and executing `eventvwr`. The service will write entries with origin named `Algorand Windows Service`. It will write a set of log entries caused by different situations, as follows:
+Open the Event Log by pressing Windows + R and executing `eventvwr`. The service will write entries with origin named `Algorand Windows Service`. Current emitted events are on the following list:
 
 | Event ID | Cause |
 |----------| ----- |
@@ -123,6 +136,7 @@ Open the Event Log by pressing Windows + R and executing `eventvwr`. The service
 3007 | Invalid network parameter.
 3008 | Invalid, nonexistent or inaccesible node data directory.
 3009 | Pre-flight configuration information.
+
 
 ## License
 
