@@ -99,8 +99,8 @@ static DWORD StartServiceRoutine (MSIHANDLE hInstall)
     auto hService = OpenService(hSCM, szSvcName, SERVICE_ALL_ACCESS);
     if(!hService)
     {
-        return  GetLastError();
         CloseServiceHandle(hSCM);
+        return  GetLastError();
     }
 
     SERVICE_STATUS_PROCESS ssStatus; 
