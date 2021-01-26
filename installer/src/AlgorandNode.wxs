@@ -39,8 +39,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <?error NETWORK variable must be defined to betanet, mainnet or testnet. ?>
     <?endif ?>
 
-    <?define PRODUCTID = $(var.THISPRODUCTID) ?>
-
     <?ifndef GOBINFOLDER ?>
         <?error Required GOBINFOLDER variable not set ?>
     <?endif ?>
@@ -57,7 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <!-- Product definition starts here. -->
 
     <Product Name='Algorand Node for Windows ($(var.NETWORK))' Manufacturer='Rand Labs'
-        Id="$(var.PRODUCTID)"
+        Id="$(var.THISPRODUCTID)"
         UpgradeCode="$(var.FULLUPGRADECODE)"
         Language='1033' Codepage='1252' 
         Version='$(var.ALGOVERSION)'>
@@ -70,6 +68,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             Compressed='yes'
             SummaryCodepage='1252' />
 
+        <MajorUpgrade DowngradeErrorMessage="A later version of [ProductName] is already installed. Please uninstall the newer version first. Setup will now exit." />
+
         <!-- Restrict conditions -->
 
         <!-- <Condition Message='This installation can only run in full UI mode.'><![CDATA[UILevel = 5]]></Condition> -->
@@ -78,7 +78,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Configuration defaults -->
 
-        <Property Id="PORTNUMBER" Value="8111" Secure="yes"/>
+        <Property Id="PORTNUMBER" Value="8081" Secure="yes"/>
         <Property Id="ENABLEARCHIVALMODE"  Secure="yes"/>
         <Property Id="THISNETWORK" Value="$(var.NETWORK)" Secure="yes"/>
 

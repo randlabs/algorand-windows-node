@@ -13,14 +13,25 @@
                 <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="!(loc.WelcomeDlgBitmap)" />
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="!(loc.WixUIBack)" />
                 <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+
+                <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes" 
+                    Text="{\WixUI_Font_Bigger}Welcome to the Algorand Node for Windows Setup">
+                </Control>
+                
+                <!-- New install for product -->
                 <Control Id="Description" Type="Text" X="135" Y="85" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="This wizard will guide you in the installation of your Algorand Node and companion tools in your system.">
-                    <Condition Action="show">NOT Installed OR NOT PATCH</Condition>
-                    <Condition Action="hide">Installed AND PATCH</Condition>
+                    <Condition Action="show">NOT Installed OR NOT PATCH OR NOT WIX_UPGRADE_DETECTED</Condition>
+                    <Condition Action="hide">Installed AND PATCH OR WIX_UPGRADE_DETECTED</Condition>
                 </Control>
-                <Control Id="Description2" Type="Text" X="135" Y="180" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="Adapted by Rand Labs with the support of Algorand Foundation. Algorand Node developed by Algorand Inc.">
-                    <Condition Action="show">NOT Installed OR NOT PATCH</Condition>
-                    <Condition Action="hide">Installed AND PATCH</Condition>
+
+                <!-- Upgrade notice -->
+                <Control Id="DescriptionUpgrade" Type="Text" X="135" Y="85" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="This wizard will guide you in upgrading your installed Algorand Node and companion tools to this new version.">
+                    <Condition Action="show">WIX_UPGRADE_DETECTED</Condition>
+                    <Condition Action="hide">NOT WIX_UPGRADE_DETECTED</Condition>
                 </Control>
+
+                <Control Id="Description2" Type="Text" X="135" Y="180" Width="220" Height="60" Transparent="yes" NoPrefix="yes" 
+                    Text="Adapted by Rand Labs with the support of Algorand Foundation. Algorand Node developed by Algorand Inc." />
                 <Control Id="Link1" Type="Hyperlink" X="135" Y="210" Width="100" Height="20">
                     <Text><![CDATA[<a href="https://randlabs.io/">randlabs.io</a>]]></Text>
                 </Control>
@@ -30,11 +41,10 @@
                 <Control Id="Link3" Type="Hyperlink" X="290" Y="210" Width="70" Height="20">
                     <Text><![CDATA[<a href="https://www.algorand.com">algorand.com</a>]]></Text>
                 </Control>
-                <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Welcome to the Algorand Node for Windows Setup" />
                 <Control Type="Text" Id="VersionTxt" Width="50" Height="17" X="11" Y="244" Text="Version $(var.ALGOVERSION)" Transparent="yes" />
             </Dialog>
             <InstallUISequence>
-                <Show Dialog="WelcomeDlg_2" Before="ProgressDlg" Overridable="yes">NOT Installed OR PATCH</Show>
+                <Show Dialog="WelcomeDlg_2" Before="ProgressDlg" Overridable="yes">1</Show>
             </InstallUISequence>
         </UI>
     </Fragment>
