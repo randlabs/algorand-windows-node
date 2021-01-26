@@ -23,6 +23,7 @@
 #include <memory>
 #include <string>
 #include <stdexcept>
+#include <algorithm>
 #include "dprintf.h"
 
 #define EXPORT __declspec(dllexport)
@@ -47,8 +48,10 @@ extern "C" UINT EXPORT ValidatePortNumber (MSIHANDLE hInstall)
 
     try
     {
-        int x = std::stoi(std::wstring(szPortNum));
-        if (x < 0 || x > 65535) 
+        auto sPort = std::wstring(szPortNum);
+        bool valid = std::all_of(sPort.begin(), sPort.end(), [](wchar_t c) { return (c >= L'0' && c <= L'9') || c == L' '; });
+        int x = std::stoi(sPort);
+        if (x < 0 || x > 65535 || !valid) 
         {
             throw( std::out_of_range("invalid port number"));
         }
