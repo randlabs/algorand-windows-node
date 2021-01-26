@@ -8,6 +8,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
+# -----------------------------------------------------------------------------
+#
+# Product GUIDs are correlated to the x.y.z version and network of the product
+# by calculating SHA256 of "x.y.z-network" string and formatting it as GUID, e.g:
+#
+# * See GenProdId.sh for details. For example, 2.3.0-testnet Producit GUID is 
+#   14df32b6-c41a-3fde-1a39-79f7b7f27ef6 
+# -----------------------------------------------------------------------------
+
 CABASENAME=CustomActions
 CASOURCE=$(CABASENAME).cpp
 CADLL=$(CABASENAME).dll
@@ -20,7 +29,8 @@ LIGHT=$(WIX)bin\light.exe
 GOBINFOLDER=$(HOME)/go/bin
 SVCBINFOLDER=../../algodsvc
 ALGOVERSION := $(shell $(GOBINFOLDER)/goal.exe --version | awk 'FNR == 2 { print $$1 }' | awk -F "." 'BEGIN{OFS=""} { print $$1,".",$$2,".",$$3 }')
-MSI=AlgorandNode-$(NETWORK)-$(ALGOVERSION).msi
+MSI=AlgorandNode-$(ALGOVERSION)-$(NETWORK).msi
+THISPRODUCTID := $(shell echo -n $(ALGOVERSION)-$(NETWORK) | sha256sum | cut -c 1-32 | sed 's/./&-/8;s/./&-/13;s/./&-/18;s/./&-/23')
 
 all: $(CADLL) $(OBJ) $(MSI) 
 
@@ -28,7 +38,7 @@ $(CADLL): $(CASOURCE)
 	$(CC) $(CASOURCE)  -o $(CADLL) $(CFLAGS)
 
 $(OBJ): $(SOURCES) $(CADLL)
-	"$(CANDLE)" $(SOURCES) -arch x64 -dALGOVERSION=$(ALGOVERSION) -dGOBINFOLDER=$(GOBINFOLDER) -dSVCBINFOLDER=$(SVCBINFOLDER) -dNETWORK=$(NETWORK) -v
+	"$(CANDLE)" $(SOURCES) -arch x64 -dTHISPRODUCTID=$(THISPRODUCTID) -dALGOVERSION=$(ALGOVERSION) -dGOBINFOLDER=$(GOBINFOLDER) -dSVCBINFOLDER=$(SVCBINFOLDER) -dNETWORK=$(NETWORK) -v
 
 $(MSI): $(OBJ)
 	"$(LIGHT)" $(OBJ) -ext WixUIExtension -out $(MSI) -reusecab -cc cabs -v

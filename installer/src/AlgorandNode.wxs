@@ -29,18 +29,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <?if $(var.NETWORK) = "betanet" ?>
         <?define FULLSERVICENAME = "algodsvc_betanet" ?>
         <?define FULLUPGRADECODE = 'ff190b41-c9d0-4e2f-83ba-96e508ab45bf' ?>
-        <?define PRODUCTID = 'd9e9519a-7257-422a-8d6a-fb465023b505' ?>
     <?elseif $(var.NETWORK) = "mainnet" ?>
         <?define FULLSERVICENAME = "algodsvc_mainnet" ?>
         <?define FULLUPGRADECODE = 'a5fc9132-8d0b-4731-9a8f-2478a593a7a2' ?>
-        <?define PRODUCTID = 'ba3f848c-c25d-4eaa-b2ad-04c10b2c499d' ?>
     <?elseif $(var.NETWORK) = "testnet" ?>
         <?define FULLSERVICENAME = "algodsvc_testnet" ?>
         <?define FULLUPGRADECODE = '293a0964-5644-48c0-b79f-3031296c2c99' ?>
-        <?define PRODUCTID = '3b4994ac-9be1-4151-9dbd-3a4abd59cb4f' ?>
     <?else ?>
         <?error NETWORK variable must be defined to betanet, mainnet or testnet. ?>
     <?endif ?>
+
+    <?define PRODUCTID = $(var.THISPRODUCTID) ?>
 
     <?ifndef GOBINFOLDER ?>
         <?error Required GOBINFOLDER variable not set ?>
