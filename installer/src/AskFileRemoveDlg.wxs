@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (C) 2021 Rand Labs
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <UI>
+            <Dialog Id="AskFileRemoveDlg" Width="370" Height="270" Title="Keep or Remove Files">
+                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+                    <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+                </Control>
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)" />
+                <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="!(loc.WelcomeDlgBitmap)" />
+                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+                <Control Id="Description" Type="Text" X="135" Y="49" Width="220" Height="30" Transparent="yes" NoPrefix="yes" Text="Please choose if you want to keep or uninstall completely your blockchain synchronization data and/or configuration file. ">
+                </Control>
+                <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="16" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Keep Files" />
+                <Control Type="CheckBox" CheckBoxValue="1" Id="chkKeepConfigFile" Width="250" Height="17" X="135" Y="90" Text="Keep node configuration file" Property="KEEPCONFIGFILE">
+                </Control>
+                <Control Type="CheckBox" Id="chkKeepSync" Width="176" Height="17" X="135" Y="112" Property="KEEPSYNCDATA" Text="Keep chain synchronization data" />
+                <Control Type="Bitmap" Id="bmpWarn" Width="32" Height="32" X="135" Y="160" Text="xxx" />
+                <Control Type="Text" Id="WarnText" Width="176" Height="28" X="170" Y="140" Text="If you delete your chain data, you will need to wait for resync of  your node from scratch." Transparent="yes" />
+            </Dialog>
+        </UI>
+    </Fragment>
+</Wix>
