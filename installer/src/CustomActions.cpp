@@ -30,6 +30,27 @@
 
 #define EXPORT __declspec(dllexport)
 
+static inline std::string& LeftTrim(std::string& s, const char* t = " \t\n\r\f\v")
+{
+    s.erase(0, s.find_first_not_of(t));
+    return s;
+}
+
+// Trim spaces from right
+
+static inline std::string& RightTrim(std::string& s, const char* t = " \t\n\r\f\v")
+{
+    s.erase(s.find_last_not_of(t) + 1);
+    return s;
+}
+    
+// Trim leading and trailing whitespace
+
+static inline std::string& Trim(std::string& s, const char* t = " \t\n\r\f\v")
+{
+    return LeftTrim(RightTrim(s, t), t);
+}
+
 static DWORD SetConfigEntry(std::string& buffer, const std::string& key, const std::string& value)
 {   
     const auto keyPos = buffer.find(key);
@@ -38,6 +59,16 @@ static DWORD SetConfigEntry(std::string& buffer, const std::string& key, const s
     const size_t startReplace = keyPos + key.size() + 3;
     buffer.erase(startReplace, buffer.find_first_of('\n', startReplace) - startReplace - 1);
     buffer.insert(startReplace, value);
+    return ERROR_SUCCESS;
+}
+
+static DWORD GetConfigEntry(std::string& buffer, const std::string& key, std::string& value)
+{   
+    const auto keyPos = buffer.find(key);
+    if (keyPos == std::wstring::npos)
+        return ERROR_NOT_FOUND;
+    const size_t valStart = keyPos + key.size() + 3;
+    value = buffer.substr(valStart, buffer.find_first_of('\n', valStart) - valStart - 1);
     return ERROR_SUCCESS;
 }
 
@@ -56,7 +87,6 @@ static DWORD CalcSvcControlWaitTime(LPSERVICE_STATUS ssStatus)
 
     return dwWaitTime;
 }
-
 
 extern "C" UINT EXPORT ValidatePortNumber (MSIHANDLE hInstall) 
 {
@@ -307,8 +337,72 @@ extern "C" UINT EXPORT RemoveTrailingSlash (MSIHANDLE hInstall)
     return ERROR_SUCCESS;
 }
 
+extern "C" UINT EXPORT ReadConfigFromFile (MSIHANDLE hInstall)
+{
+    //
+    // (!) YES.  This should be done with a proper JSON READER.
+    //           But this is enough for now....
+    //
+
+    wchar_t szConfigFile[MAX_PATH];
+    wchar_t szPortNum[8];
+    
+    DWORD cchConfigFile = sizeof(szConfigFile) / sizeof(wchar_t);
+    MsiGetPropertyW(hInstall, L"NodeDataDirAlgorandDataNetSpecific", szConfigFile, &cchConfigFile);
+
+    wcsncat(szConfigFile, L"\\config.json", wcslen(L"\\config.json"));
+
+    HANDLE hFile = CreateFileW(szConfigFile,
+                               GENERIC_READ,
+                               0,
+                               NULL,
+                               OPEN_EXISTING,
+                               FILE_ATTRIBUTE_NORMAL,
+                               NULL);
+
+    dprintfW(L"algorand-install-CA: ApplyConfigToFile Open %s, status %d", szConfigFile, GetLastError());
+
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        std::string str;
+        DWORD dwFileSize = GetFileSize(hFile, NULL);
+        DWORD dwBytesRead = 0;
+        if (dwFileSize > 0)
+        {
+            auto buffer = std::make_unique<char[]>(dwFileSize);
+            if (ReadFile(hFile, buffer.get(), dwFileSize, &dwBytesRead, NULL))
+            {
+                dprintfW(L"algorand-install-CA: ApplyConfigToFile Read %d bytes from config.json", dwBytesRead);
+                str.assign(buffer.get());
+
+                std::string archival, endpointAddr;
+
+                GetConfigEntry(str, "Archival", archival); 
+                GetConfigEntry(str, "EndpointAddress", endpointAddr);
+                StringCchPrintf(szPortNum, 8, L"%d", std::stoi(endpointAddr.substr(endpointAddr.find(":") + 1)));
+                archival = Trim(archival);
+                
+                dprintfW(L"algorand-install-CA: Found config: archival %s, port %s", archival, szPortNum);
+
+                MsiSetPropertyW(hInstall, L"ENABLEARCHIVALMODE", Trim(archival) == "true" ? L"1" : L"0");
+                MsiSetPropertyW(hInstall, L"PORTNUMBER", szPortNum);
+            }
+        }
+
+        CloseHandle(hFile);
+    }
+
+    return ERROR_SUCCESS;
+
+}
+
 extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall) 
 {
+    //
+    // (!) YES.  This should be done with a proper JSON WRITER.
+    //           But this is enough for now....
+    // 
+
     DWORD status = ERROR_SUCCESS;
 
     wchar_t szConfigFile[MAX_PATH];
