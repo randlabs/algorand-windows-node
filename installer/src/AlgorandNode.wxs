@@ -68,11 +68,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             Compressed='yes'
             SummaryCodepage='1252' />
 
-        <MajorUpgrade DowngradeErrorMessage="A later version of [ProductName] is already installed. Please uninstall the newer version first. Setup will now exit." />
+        <MajorUpgrade 
+            DowngradeErrorMessage="A later version of [ProductName] is already installed. Please uninstall the newer version first. Setup will now exit."
+        />
 
         <!-- Restrict conditions -->
 
-        <!-- <Condition Message='This installation can only run in full UI mode.'><![CDATA[UILevel = 5]]></Condition> -->
         <Condition Message="This application is only supported on Windows 8 or higher."><![CDATA[VersionNT >= 602]]></Condition>
         <Condition Message="[ProductName] cannot be installed on a 32-bit operating system."><![CDATA[VersionNT64]]></Condition>
 
@@ -82,16 +83,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Property Id="ENABLEARCHIVALMODE"  Secure="yes"/>
         <Property Id="THISNETWORK" Value="$(var.NETWORK)" Secure="yes"/>
 
-        
-        <Property Id="ApplicationFolderName" Value="AlgorandFolder" />
-        <Property Id="WixAppFolder" Value="WixPerMachineFolder" />      
-
         <!-- Windows installer Add/remove programs properties -->
 
         <Property Id="ARPHELPLINK" Value="https://randlabs.io" />
         <Property Id="ARPPRODUCTICON" Value="AlgoIconBlack.ico" />
         <Icon Id="AlgoIconBlack.ico" SourceFile="res\AlgoIconBlack.ico"/>
-        
+        <Property Id="ApplicationFolderName" Value="AlgorandFolder" />
+        <Property Id="WixAppFolder" Value="WixPerMachineFolder" />      
+
         <!-- CAs -->
         <Binary Id="CaDll" SourceFile="CustomActions.dll" />
 
@@ -106,10 +105,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <CustomAction Id='ValidatePortNumber'           BinaryKey='CaDll' DllEntry='ValidatePortNumber' />
         <CustomAction Id='SetMsgDlgProp_InvalidPort'    BinaryKey='CaDll' DllEntry='SetMsgDlgProp_InvalidPort' />
         <CustomAction Id='StartServiceOnExit'           BinaryKey='CaDll' DllEntry='StartServiceOnExit' />
+        <CustomAction Id='StopService'                  BinaryKey='CaDll' DllEntry='StopService' Execute="immediate" Return="ignore" />
+        <CustomAction Id='RequestUninstallDataDir'      BinaryKey='CaDll' DllEntry='RequestUninstallDataDir' Execute='immediate' Return='check' />
 
         <InstallExecuteSequence>
             <Custom Action="RemoveTrailingSlash" After="CostFinalize">NOT REMOVE</Custom>
-            <Custom Action="ApplyConfigToFile" After="InstallFinalize">NOT Installed</Custom>
+            <Custom Action="ApplyConfigToFile" After="InstallFinalize">NOT WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
+            <Custom Action="RequestUninstallDataDir" After="RemoveFiles">NOT UPGRADINGPRODUCTCODE AND REMOVE~="ALL"</Custom>
+            <Custom Action="StopService" Before="InstallValidate"></Custom>
         </InstallExecuteSequence>
         
         <Media Id='1' Cabinet='Algorand_$(var.NETWORK).cab' EmbedCab='yes' DiskPrompt='Disk 1' />
@@ -124,21 +127,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <WixVariable Id="WixUIBannerBmp" Value="res\header.bmp" />
         <WixVariable Id="WixUIDialogBmp" Value="res\back.bmp" />
 
+        <!-- Saved and retrieved properties (see https://robmensching.com/blog/posts/2010/5/2/the-wix-toolsets-remember-property-pattern ) -->
+
+        <Property Id='ALGORANDNETDATAFOLDER'>
+            <RegistrySearch Id='RegDataFolderKey' Root='HKLM'
+                Key="Software\Algorand\Node\$(var.NETWORK)"
+                Name='DataFolder' Type='raw' 
+            />
+        </Property>
+       
         <!-- Target directory starts here -->
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
 
-        <!-- Genesis and config file -->
+        <!-- Genesis and config file 
+        
+        The data directory is not removed at uninstall stages EXCEPT when
+        is complete uninstall and user accepts via RequestUninstallDataDir CA -->
 
             <Directory Id='CommonAppDataFolder'>
                 <Directory Id='NodeDataDirAlgorand' Name='Algorand'>
                     <Directory Id='NodeDataDirAlgorandData' Name='data'>
                         <Directory Id='NodeDataDirAlgorandDataNetSpecific' Name='$(var.NETWORK)'>
-                            <Component Id='genesisfile' Guid='2c0a4424-5b60-4ea9-8018-6ba8ccc1c067'>
-                                <File Id="genesisjson" Name="genesis.json" DiskId="1" Source="$(var.GENESISFILE)" />
+                            <!-- Save data folder property to registry -->
+                             <Component Id="COMP_RegDataFolder">
+                                <RegistryValue Root="HKLM" 
+                                    Name="DataFolder" 
+                                    Key="Software\Algorand\Node\$(var.NETWORK)" 
+                                    Type="string" 
+                                    Value="[NodeDataDirAlgorandDataNetSpecific2]" />
                             </Component>
-                            <Component Id='configfile' Guid='a7b7760e-ad84-4caa-aec0-938c0641d4ec'>
-                                <File Id="configfile" Name="config.json" DiskId="1" Source="$(var.SAMPLECONFIGFILE)" />
+                            <Component Id='genesisfile' Guid='*'>
+                                <File Id="genesisjson" Name="genesis.json" DiskId="1" Source="$(var.GENESISFILE)" KeyPath="yes" />
+                            </Component>
+                            <Component Id='configfile' Guid='*' Permanent="yes">
+                                <File Id="configfile" Name="config.json" DiskId="1" Source="$(var.SAMPLECONFIGFILE)" KeyPath="yes" />
                             </Component>
                         </Directory>
                     </Directory>
@@ -422,6 +445,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ComponentRef Id='BINCOMP_update' />
             <ComponentRef Id='BINCOMP_updater' />
             <ComponentRef Id='AlgorandShortcuts' />
+            <ComponentRef Id='COMP_RegDataFolder' />
         </Feature>
     </Product>
 </Wix>

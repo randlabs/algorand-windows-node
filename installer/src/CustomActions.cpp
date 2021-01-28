@@ -24,6 +24,8 @@
 #include <string>
 #include <stdexcept>
 #include <algorithm>
+#include <shellapi.h>
+#include <shlwapi.h>
 #include "dprintf.h"
 
 #define EXPORT __declspec(dllexport)
@@ -37,6 +39,22 @@ static DWORD SetConfigEntry(std::string& buffer, const std::string& key, const s
     buffer.erase(startReplace, buffer.find_first_of('\n', startReplace) - startReplace - 1);
     buffer.insert(startReplace, value);
     return ERROR_SUCCESS;
+}
+
+static DWORD CalcSvcControlWaitTime(LPSERVICE_STATUS ssStatus)
+{
+    // Do not wait longer than the wait hint. A good interval is 
+    // one-tenth of the wait hint but not less than 1 second  
+    // and not more than 10 seconds. 
+ 
+    DWORD dwWaitTime = ssStatus->dwWaitHint / 10;
+
+    if(dwWaitTime < 1000)
+        dwWaitTime = 1000;
+    else if (dwWaitTime > 10000)
+        dwWaitTime = 10000;
+
+    return dwWaitTime;
 }
 
 
@@ -74,6 +92,48 @@ extern "C" UINT EXPORT SetMsgDlgProp_InvalidPort (MSIHANDLE hInstall)
     return ERROR_SUCCESS;
 }
 
+extern "C" UINT EXPORT RequestUninstallDataDir (MSIHANDLE hInstall)
+{
+    MSIHANDLE hRec = MsiCreateRecord(0);
+    MsiRecordSetStringW(hRec, 0, L"Do you want to keep your data directory?"
+        "\nThis includes configuration files and Algorand chain synchronization data.\n\n"
+        "If you delete your chain data, you will need to wait for resync of  your node from scratch.");
+    int ret = MsiProcessMessage(hInstall, (INSTALLMESSAGE) (INSTALLMESSAGE_USER | MB_ICONWARNING | MB_YESNOCANCEL |  MB_DEFBUTTON1), hRec);
+    MsiCloseHandle(hRec);
+
+    if (ret == IDCANCEL)
+    {
+        return ERROR_INSTALL_USEREXIT;
+    } 
+    else if (ret == IDNO) 
+    {
+        wchar_t szDir[MAX_PATH + 1] = { 0 };        // we need double-zeroed end for SHFileOperationW
+        DWORD cchDir = MAX_PATH;
+
+        MsiGetPropertyW(hInstall, L"ALGORANDNETDATAFOLDER", szDir, &cchDir);
+        
+        dprintfW(L"algorand-install-CA: Initiating SHFileOperationW to remove %s", szDir);
+
+        szDir[wcslen(szDir)+1] = wchar_t(0); // Ensure double zero at end for ShFileOperationW
+
+        SHFILEOPSTRUCTW fop;
+        ZeroMemory(&fop, sizeof(SHFILEOPSTRUCTW));
+        fop.wFunc = FO_DELETE;
+        fop.pFrom = szDir;
+        fop.fFlags = FOF_NO_UI;
+        if (int ret = SHFileOperationW(&fop))
+        {
+            dprintfW(L"algorand-install-CA: SHFileOperationW FAILED with code %d", ret);
+            return ERROR_IO_DEVICE;
+        }
+        else 
+        {
+             dprintfW(L"algorand-install-CA: SHFileOperationW success.", ret);
+        }
+    }
+    return ERROR_SUCCESS;
+}
+
 static DWORD StartServiceRoutine (MSIHANDLE hInstall)
 {
     auto hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
@@ -88,7 +148,7 @@ static DWORD StartServiceRoutine (MSIHANDLE hInstall)
         && (wcsncmp(szNetwork, L"betanet" ,8) != 0)
         && (wcsncmp(szNetwork,  L"mainnet" ,8) != 0))
         {
-            dprintfW(L"algorand-install-CA: bad network name: %s", szNetwork);
+            dprintfW(L"algorand-install-CA: StartServiceRoutine: bad network name: %s", szNetwork);
             return ERROR_INVALID_NETNAME;
         }
         
@@ -124,17 +184,19 @@ static DWORD StartServiceRoutine (MSIHANDLE hInstall)
         return ERROR_SERVICE_ALREADY_RUNNING;
     }
 
-    DWORD cTime = 0;
-    const auto SLEEP_INTERVAL = 0;
-    const auto START_WAIT_LIMIT = 30*1000; // 30 secs.
+    // Do not wait longer than the wait hint. A good interval is 
+    // one-tenth of the wait hint but not less than 1 second  
+    // and not more than 10 seconds. 
+ 
+    DWORD dwWaitTime = CalcSvcControlWaitTime((LPSERVICE_STATUS)&ssStatus);
+
     if (StartService(hService, 0, NULL))
     {
         QueryServiceStatusEx(hService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssStatus, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded);
 
-        while (ssStatus.dwCurrentState == SERVICE_START_PENDING && cTime <= START_WAIT_LIMIT)
+        while (ssStatus.dwCurrentState == SERVICE_START_PENDING)
         {
-            Sleep(SLEEP_INTERVAL);
-            cTime += SLEEP_INTERVAL;
+            Sleep(dwWaitTime);
             QueryServiceStatusEx(hService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssStatus, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded);
         }
 
@@ -144,12 +206,72 @@ static DWORD StartServiceRoutine (MSIHANDLE hInstall)
         }
         else
         {
-            dprintfW(L"algorand-install-CA: Service did not pass to RUNNING state after %d ms.", START_WAIT_LIMIT);
+            dprintfW(L"algorand-install-CA: Service did not pass to RUNNING state");
         }
     }
     else 
     {
         dprintfW(L"algorand-install-CA: StartService failed (%d)\n", ssStatus.dwCurrentState);
+    }
+
+    CloseServiceHandle(hService); 
+    CloseServiceHandle(hSCM);
+    return ERROR_SUCCESS;
+}
+
+extern "C" UINT EXPORT StopService (MSIHANDLE hInstall)
+{
+    auto hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    if (!hSCM)
+        return GetLastError();
+
+    wchar_t szNetwork[8];
+    DWORD cchNetwork = 8;
+    MsiGetPropertyW(hInstall, L"THISNETWORK", szNetwork, &cchNetwork);
+
+    if (  (wcsncmp(szNetwork, L"testnet" ,8) != 0)
+        && (wcsncmp(szNetwork, L"betanet" ,8) != 0)
+        && (wcsncmp(szNetwork,  L"mainnet" ,8) != 0))
+        {
+            dprintfW(L"algorand-install-CA: StopService. bad or no network name: %s", szNetwork);
+            return ERROR_INVALID_NETNAME;
+        }
+        
+    wchar_t szSvcName[32] = {0};
+    wcsncpy(szSvcName, L"algodsvc_", 9);
+    wcsncat(szSvcName, szNetwork, wcslen(szNetwork));
+
+    auto hService = OpenService(hSCM, szSvcName, SERVICE_ALL_ACCESS);
+    if(!hService)
+    {
+        CloseServiceHandle(hSCM);
+        return  GetLastError();
+    }
+
+    SERVICE_STATUS_PROCESS ssStatus; 
+    DWORD dwBytesNeeded = 0;
+    if(!QueryServiceStatusEx(hService, SC_STATUS_PROCESS_INFO, (LPBYTE) &ssStatus, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded))
+    {
+        dprintfW(L"algorand-install-CA: QueryServiceStatusEx failed (%d)\n", GetLastError());
+        CloseServiceHandle(hService); 
+        CloseServiceHandle(hSCM);
+        return GetLastError();
+    }
+
+    if(!ControlService(hService, SERVICE_CONTROL_STOP, (LPSERVICE_STATUS)&ssStatus))
+    {
+        dprintfW(L"algorand-install-CA: ControlService to stop failed (%d)\n", GetLastError());
+        CloseServiceHandle(hService); 
+        CloseServiceHandle(hSCM);
+        return GetLastError();
+    }
+    
+    DWORD dwWaitTime = CalcSvcControlWaitTime((LPSERVICE_STATUS)&ssStatus);
+
+    while (ssStatus.dwCurrentState != SERVICE_STOPPED) 
+    {
+        Sleep( dwWaitTime );
+        QueryServiceStatusEx(hService, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssStatus, sizeof(SERVICE_STATUS_PROCESS), &dwBytesNeeded);    
     }
 
     CloseServiceHandle(hService); 

@@ -21,6 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
     <Fragment>
+        
+
         <UI Id="WixUI_InstallDir_Algorand">
             <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Start Algorand Node Service now" />
             <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
