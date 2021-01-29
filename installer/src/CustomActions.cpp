@@ -28,49 +28,11 @@
 #include <shlwapi.h>
 #include "dprintf.h"
 
+#include "inc/json.hpp"
+
+using json = nlohmann::json;
+
 #define EXPORT __declspec(dllexport)
-
-static inline std::string& LeftTrim(std::string& s, const char* t = " \t\n\r\f\v")
-{
-    s.erase(0, s.find_first_not_of(t));
-    return s;
-}
-
-// Trim spaces from right
-
-static inline std::string& RightTrim(std::string& s, const char* t = " \t\n\r\f\v")
-{
-    s.erase(s.find_last_not_of(t) + 1);
-    return s;
-}
-    
-// Trim leading and trailing whitespace
-
-static inline std::string& Trim(std::string& s, const char* t = " \t\n\r\f\v")
-{
-    return LeftTrim(RightTrim(s, t), t);
-}
-
-static DWORD SetConfigEntry(std::string& buffer, const std::string& key, const std::string& value)
-{   
-    const auto keyPos = buffer.find(key);
-    if (keyPos == std::wstring::npos)
-        return ERROR_NOT_FOUND;
-    const size_t startReplace = keyPos + key.size() + 3;
-    buffer.erase(startReplace, buffer.find_first_of('\n', startReplace) - startReplace - 1);
-    buffer.insert(startReplace, value);
-    return ERROR_SUCCESS;
-}
-
-static DWORD GetConfigEntry(std::string& buffer, const std::string& key, std::string& value)
-{   
-    const auto keyPos = buffer.find(key);
-    if (keyPos == std::wstring::npos)
-        return ERROR_NOT_FOUND;
-    const size_t valStart = keyPos + key.size() + 3;
-    value = buffer.substr(valStart, buffer.find_first_of('\n', valStart) - valStart - 1);
-    return ERROR_SUCCESS;
-}
 
 static DWORD CalcSvcControlWaitTime(LPSERVICE_STATUS ssStatus)
 {
@@ -151,7 +113,7 @@ extern "C" UINT EXPORT RequestUninstallDataDir (MSIHANDLE hInstall)
         fop.wFunc = FO_DELETE;
         fop.pFrom = szDir;
         fop.fFlags = FOF_NO_UI;
-        if (int ret = SHFileOperationW(&fop))
+        if ( (ret = SHFileOperationW(&fop)) )
         {
             dprintfW(L"algorand-install-CA: SHFileOperationW FAILED with code %d", ret);
             return ERROR_IO_DEVICE;
@@ -345,7 +307,6 @@ extern "C" UINT EXPORT ReadConfigFromFile (MSIHANDLE hInstall)
     //
 
     wchar_t szConfigFile[MAX_PATH];
-    wchar_t szPortNum[8];
     
     DWORD cchConfigFile = sizeof(szConfigFile) / sizeof(wchar_t);
     MsiGetPropertyW(hInstall, L"NodeDataDirAlgorandDataNetSpecific", szConfigFile, &cchConfigFile);
@@ -360,11 +321,10 @@ extern "C" UINT EXPORT ReadConfigFromFile (MSIHANDLE hInstall)
                                FILE_ATTRIBUTE_NORMAL,
                                NULL);
 
-    dprintfW(L"algorand-install-CA: ApplyConfigToFile Open %s, status %d", szConfigFile, GetLastError());
+    dprintfW(L"algorand-install-CA: ReadConfigFromFile Open %s, status %d", szConfigFile, GetLastError());
 
     if (hFile != INVALID_HANDLE_VALUE)
     {
-        std::string str;
         DWORD dwFileSize = GetFileSize(hFile, NULL);
         DWORD dwBytesRead = 0;
         if (dwFileSize > 0)
@@ -372,20 +332,26 @@ extern "C" UINT EXPORT ReadConfigFromFile (MSIHANDLE hInstall)
             auto buffer = std::make_unique<char[]>(dwFileSize);
             if (ReadFile(hFile, buffer.get(), dwFileSize, &dwBytesRead, NULL))
             {
-                dprintfW(L"algorand-install-CA: ApplyConfigToFile Read %d bytes from config.json", dwBytesRead);
-                str.assign(buffer.get());
+                dprintfW(L"algorand-install-CA: ReadConfigFromFile Read %d bytes from config.json", dwBytesRead);
 
-                std::string archival, endpointAddr;
+                auto configJson = json::parse(buffer.get(), nullptr, false);
+                if (configJson != json::value_t::discarded) 
+                {
+                    wchar_t szPortNum[8];
 
-                GetConfigEntry(str, "Archival", archival); 
-                GetConfigEntry(str, "EndpointAddress", endpointAddr);
-                StringCchPrintf(szPortNum, 8, L"%d", std::stoi(endpointAddr.substr(endpointAddr.find(":") + 1)));
-                archival = Trim(archival);
-                
-                dprintfW(L"algorand-install-CA: Found config: archival %s, port %s", archival, szPortNum);
+                    bool archival = static_cast<bool>(configJson["Archival"]) ? "true" : "false";
+                    std::string endpointAddr = configJson["EndpointAddress"]; 
+                    
+                    StringCchPrintf(szPortNum, 8, L"%d", std::stoi(endpointAddr.substr(endpointAddr.find(":") + 1)));
 
-                MsiSetPropertyW(hInstall, L"ENABLEARCHIVALMODE", Trim(archival) == "true" ? L"1" : L"0");
-                MsiSetPropertyW(hInstall, L"PORTNUMBER", szPortNum);
+                    dprintfW(L"algorand-install-CA: Found config: archival %d, port %s", archival, szPortNum);
+                    MsiSetPropertyW(hInstall, L"ENABLEARCHIVALMODE", archival ? L"1" : L"0");
+                    MsiSetPropertyW(hInstall, L"PORTNUMBER", szPortNum);
+                }
+                else 
+                {
+                    dprintfW(L"algorand-install-CA: ReadConfigFromFile cannot parse existing JSON, ignoring");
+                }                
             }
         }
 
@@ -398,11 +364,6 @@ extern "C" UINT EXPORT ReadConfigFromFile (MSIHANDLE hInstall)
 
 extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall) 
 {
-    //
-    // (!) YES.  This should be done with a proper JSON WRITER.
-    //           But this is enough for now....
-    // 
-
     DWORD status = ERROR_SUCCESS;
 
     wchar_t szConfigFile[MAX_PATH];
@@ -422,7 +383,7 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
     dprintfW(L"algorand-install-CA:  ApplyConfigToFile Got properties: %s,%s,%s,%s", szConfigFile, szEnableArchival, szPortNum, szNetwork);
 
     wcsncat(szConfigFile, L"\\config.json", wcslen(L"\\config.json"));
-    
+
     HANDLE hFile = CreateFileW(szConfigFile,
                                GENERIC_READ|GENERIC_WRITE,
                                0,
@@ -437,7 +398,6 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
         status = GetLastError();
     else
     {
-        std::string str;
         DWORD dwFileSize = GetFileSize(hFile, NULL);
         DWORD dwBytesRead = 0, dwBytesWritten = 0;
         if (dwFileSize == 0)
@@ -449,31 +409,36 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
             auto buffer = std::make_unique<char[]>(dwFileSize);
             if (ReadFile(hFile, buffer.get(), dwFileSize, &dwBytesRead, NULL))
             {
-                dprintfW(L"algorand-install-CA: ApplyConfigToFile Read %d bytes from config.json", dwBytesRead);
-
-                str.assign(buffer.get());
                 char wNetwork[8], wPort[8];
                 WideCharToMultiByte(CP_UTF8, 0, szNetwork, cchNetwork, wNetwork, 8, NULL, NULL);
                 WideCharToMultiByte(CP_UTF8, 0, szPortNum, cchPortNum, wPort, 8, NULL, NULL);
-                const std::string newDNSBootstrapID = std::string("\"").append(wNetwork).append(".algorand.network").append("\"");
-                const std::string newEndpointAddress = std::string("\"127.0.0.1:").append(wPort).append("\"");
+                
+                dprintfW(L"algorand-install-CA: ApplyConfigToFile Read %d bytes from config.json", dwBytesRead);
 
-                dprintfW(L"algorand-install-CA: setting DNSBootstrapId status: %d",
-                         SetConfigEntry(str, "DNSBootstrapID", newDNSBootstrapID));
+                auto configJson = json::parse(buffer.get(), nullptr, false);
+                if (configJson != json::value_t::discarded)
+                {
+                    configJson["DNSBootstrapID"] = std::string(wNetwork).append(".algorand.network");
+                    configJson["EndpointAddress"] = std::string("127.0.0.1:").append(wPort);
+                    configJson["Archival"] = wcscmp(szEnableArchival, L"1") == 0 ? true : false;
 
-                dprintfW(L"algorand-install-CA: setting EndpointAddress status: %d",
-                         SetConfigEntry(str, "EndpointAddress", newEndpointAddress));
+                    std::string str = configJson.dump(4);
 
-                dprintfW(L"algorand-install-CA: setting Archival status: %d",
-                         SetConfigEntry(str, "Archival", wcscmp(szEnableArchival, L"1") == 0 ? "true" : "false"));
+                    SetFilePointer(hFile, 0, 0, FILE_BEGIN);
+                    if (!WriteFile(hFile, str.c_str(), str.size(), &dwBytesWritten, NULL))
+                        status = GetLastError();
 
-                SetFilePointer(hFile, 0, 0, FILE_BEGIN);
-                if (!WriteFile(hFile, str.c_str(), str.size(), &dwBytesWritten, NULL))
-                    status = GetLastError();
+                    SetEndOfFile(hFile);
 
-                dprintfW(L"algorand-install-CA: ApplyConfigToFile Write %d bytes to config.json", dwBytesRead);
+                    dprintfW(L"algorand-install-CA: ApplyConfigToFile Write %d bytes to config.json", dwBytesRead);
 
-                FlushFileBuffers(hFile);
+                    FlushFileBuffers(hFile);
+                }
+                else 
+                {
+                    dprintfW(L"algorand-install-CA: json::parse failed");
+                    status = ERROR_FILE_CORRUPT;
+                }
             }
             else 
             {

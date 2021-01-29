@@ -100,7 +100,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <!-- CAs to read and write config file to/from Node Configuration UI -->
         <CustomAction Id='ApplyConfigToFile'   BinaryKey='CaDll' DllEntry='ApplyConfigToFile' />
-        <CustomAction Id='ReadConfigFromFile'   BinaryKey='CaDll' DllEntry='ReadConfigFromFile' />
+        <CustomAction Id='ReadConfigFromFile'   BinaryKey='CaDll' DllEntry='ReadConfigFromFile' Return='ignore' />
 
         <!--- Other CAs Exports -->
         <CustomAction Id='ValidatePortNumber'           BinaryKey='CaDll' DllEntry='ValidatePortNumber' />
@@ -111,11 +111,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <InstallExecuteSequence>
             <Custom Action="RemoveTrailingSlash" After="CostFinalize">NOT REMOVE</Custom>
-            <Custom Action="ReadConfigFromFile" After="CostFinalize">NOT WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
             <Custom Action="ApplyConfigToFile" After="InstallFinalize">NOT WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
             <Custom Action="RequestUninstallDataDir" After="RemoveFiles">NOT UPGRADINGPRODUCTCODE AND REMOVE~="ALL"</Custom>
             <Custom Action="StopService" Before="InstallValidate"></Custom>
         </InstallExecuteSequence>
+
+        <InstallUISequence>
+            <Custom Action="ReadConfigFromFile" After="CostFinalize">NOT WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
+        </InstallUISequence>
         
         <Media Id='1' Cabinet='Algorand_$(var.NETWORK).cab' EmbedCab='yes' DiskPrompt='Disk 1' />
         <Property Id='DiskPrompt' Value="Algorand Node Installer Media" />
