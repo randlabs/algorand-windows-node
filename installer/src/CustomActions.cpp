@@ -32,7 +32,43 @@
 
 using json = nlohmann::json;
 
-#define EXPORT __declspec(dllexport)
+#define EXPORT __declspec(dllexport) __stdcall
+#define MAX_ACTION_DATA 2048
+
+static VOID WriteLog(MSIHANDLE hInstall, LPCWSTR szFormatW, ...)
+{
+  WCHAR szBufW[2048];
+  MSIHANDLE hRecord;
+  va_list argptr;
+
+  va_start(argptr, szFormatW);
+  _vsnwprintf_s(szBufW, _countof(szBufW), _TRUNCATE, szFormatW, argptr);
+  va_end(argptr);
+  hRecord = ::MsiCreateRecord(1);
+  if (hRecord != 0)
+  {
+    ::MsiRecordSetStringW(hRecord, 1, szBufW);
+    ::MsiRecordSetStringW(hRecord, 0, L"[1]");
+    ::MsiProcessMessage(hInstall, INSTALLMESSAGE_INFO, hRecord);
+    ::MsiCloseHandle(hRecord);
+  }
+  return;
+}
+
+static UINT __stdcall ScheduleDeferredCA (MSIHANDLE hInstall, LPCWSTR szActionName, LPWSTR szActionData)
+{
+    if (!szActionName || !szActionData)
+        return ERROR_INVALID_PARAMETER;
+
+    if (szActionName[0] == L'\0')
+        return ERROR_INVALID_PARAMETER;
+
+    UINT r = MsiSetPropertyW(hInstall, szActionName, szActionData);
+    if (r != ERROR_SUCCESS)
+        return r;
+
+    return MsiDoActionW(hInstall, szActionName);
+}
 
 static DWORD CalcSvcControlWaitTime(LPSERVICE_STATUS ssStatus)
 {
@@ -82,6 +118,35 @@ extern "C" UINT EXPORT SetMsgDlgProp_InvalidPort (MSIHANDLE hInstall)
     MsiSetPropertyW(hInstall, L"MESSAGEDLGTEXT", L"Please enter a valid port number in the range from 0 to 65535.");
     MsiSetPropertyW(hInstall, L"MESSAGEDLGICONID", L"StatusAlert");
     return ERROR_SUCCESS;
+}
+
+extern "C" UINT EXPORT SchedApplyConfigToFile(MSIHANDLE hInstall)
+{
+    wchar_t szConfigFile[MAX_PATH];
+    wchar_t szEnableArchival[10];
+    wchar_t szPortNum[8];
+    wchar_t szNetwork[8]; 
+    DWORD cchConfigFile = sizeof(szConfigFile) / sizeof(wchar_t);
+    DWORD cchEnableArchival = sizeof(szEnableArchival) / sizeof(wchar_t);
+    DWORD cchPortNum = sizeof(szPortNum) / sizeof(wchar_t);
+    DWORD cchNetwork = sizeof(szNetwork) / sizeof(wchar_t);
+
+    MsiGetPropertyW(hInstall, L"NodeDataDirAlgorandDataNetSpecific", szConfigFile, &cchConfigFile);
+    MsiGetPropertyW(hInstall, L"ENABLEARCHIVALMODE", szEnableArchival, &cchEnableArchival);
+    MsiGetPropertyW(hInstall, L"PORTNUMBER", szPortNum, &cchPortNum);
+    MsiGetPropertyW(hInstall, L"THISNETWORK", szNetwork, &cchNetwork);
+
+    wchar_t szActionData[MAX_ACTION_DATA] = { 0 };
+    wcscpy_s(szActionData, L"\"");
+    wcscat_s(szActionData, szConfigFile);
+    wcscat_s(szActionData, L"\" ");
+    wcscat_s(szActionData, szEnableArchival);
+    wcscat_s(szActionData, L" ");
+    wcscat_s(szActionData, szPortNum);
+    wcscat_s(szActionData, L" ");
+    wcscat_s(szActionData, szNetwork);
+
+    return ScheduleDeferredCA(hInstall, L"ApplyConfigToFile", szActionData);
 }
 
 extern "C" UINT EXPORT RequestUninstallDataDir (MSIHANDLE hInstall)
@@ -311,7 +376,7 @@ extern "C" UINT EXPORT ReadConfigFromFile (MSIHANDLE hInstall)
     DWORD cchConfigFile = sizeof(szConfigFile) / sizeof(wchar_t);
     MsiGetPropertyW(hInstall, L"NodeDataDirAlgorandDataNetSpecific", szConfigFile, &cchConfigFile);
 
-    wcsncat(szConfigFile, L"\\config.json", wcslen(L"\\config.json"));
+    wcsncat(szConfigFile, L"config.json", wcslen(L"config.json"));
 
     HANDLE hFile = CreateFileW(szConfigFile,
                                GENERIC_READ,
@@ -366,25 +431,34 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
 {
     DWORD status = ERROR_SUCCESS;
 
-    wchar_t szConfigFile[MAX_PATH];
-    wchar_t szEnableArchival[10];
-    wchar_t szPortNum[8];
-    wchar_t szNetwork[8]; 
-    DWORD cchConfigFile = sizeof(szConfigFile) / sizeof(wchar_t);
-    DWORD cchEnableArchival = sizeof(szEnableArchival) / sizeof(wchar_t);
-    DWORD cchPortNum = sizeof(szPortNum) / sizeof(wchar_t);
-    DWORD cchNetwork = sizeof(szNetwork) / sizeof(wchar_t);
+    wchar_t szCaData[MAX_ACTION_DATA] = { 0 };
+    DWORD cchCaData = MAX_ACTION_DATA;
+    int numArgs;
+    MsiGetPropertyW(hInstall, L"CustomActionData", szCaData, &cchCaData);
 
-    MsiGetPropertyW(hInstall, L"NodeDataDirAlgorandDataNetSpecific", szConfigFile, &cchConfigFile);
-    MsiGetPropertyW(hInstall, L"ENABLEARCHIVALMODE", szEnableArchival, &cchEnableArchival);
-    MsiGetPropertyW(hInstall, L"PORTNUMBER", szPortNum, &cchPortNum);
-    MsiGetPropertyW(hInstall, L"THISNETWORK", szNetwork, &cchNetwork);
+    // if (ret != ERROR_SUCCESS)
+    // {
+    //     return ret;
+    // }
 
-    dprintfW(L"algorand-install-CA:  ApplyConfigToFile Got properties: %s,%s,%s,%s", szConfigFile, szEnableArchival, szPortNum, szNetwork);
+    LPWSTR* argv = CommandLineToArgvW(szCaData, &numArgs );
 
-    wcsncat(szConfigFile, L"\\config.json", wcslen(L"\\config.json"));
+    if (numArgs != 4) 
+    {
+        dprintfW(L"algorand-install-CA: invalid num of arguments %d (expected 4)", numArgs);
+        return ERROR_BAD_ARGUMENTS;
+    }
 
-    HANDLE hFile = CreateFileW(szConfigFile,
+    LPWSTR szConfigPath = argv[0];
+    LPWSTR szEnableArchival = argv[1];
+    LPWSTR szPortNum = argv[2];
+    LPWSTR szNetwork = argv[3];
+
+    dprintfW(L"algorand-install-CA:  ApplyConfigToFile custom data Got properties: %s,%s,%s,%s", szConfigPath, szEnableArchival, szPortNum, szNetwork);
+
+    std::wstring configFile = std::wstring(szConfigPath).append(L"config.json");
+
+    HANDLE hFile = CreateFileW(configFile.c_str(),
                                GENERIC_READ|GENERIC_WRITE,
                                0,
                                NULL,
@@ -392,7 +466,7 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
                                FILE_ATTRIBUTE_NORMAL,
                                NULL);
 
-    dprintfW(L"algorand-install-CA: ApplyConfigToFile Open %s, status %d", szConfigFile, GetLastError());
+    dprintfW(L"algorand-install-CA: ApplyConfigToFile Open %s, status %d", configFile.c_str(), GetLastError());
 
     if (hFile == INVALID_HANDLE_VALUE)
         status = GetLastError();
@@ -410,8 +484,8 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
             if (ReadFile(hFile, buffer.get(), dwFileSize, &dwBytesRead, NULL))
             {
                 char wNetwork[8], wPort[8];
-                WideCharToMultiByte(CP_UTF8, 0, szNetwork, cchNetwork, wNetwork, 8, NULL, NULL);
-                WideCharToMultiByte(CP_UTF8, 0, szPortNum, cchPortNum, wPort, 8, NULL, NULL);
+                WideCharToMultiByte(CP_UTF8, 0, szNetwork, 8, wNetwork, 8, NULL, NULL);
+                WideCharToMultiByte(CP_UTF8, 0, szPortNum, 8, wPort, 8, NULL, NULL);
                 
                 dprintfW(L"algorand-install-CA: ApplyConfigToFile Read %d bytes from config.json", dwBytesRead);
 

@@ -94,12 +94,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <!-- CAs -->
         <Binary Id="CaDll" SourceFile="CustomActions.dll" />
 
+        <!-- Scheduling CAs -->
+        <CustomAction Id='SchedApplyConfigToFile' BinaryKey='CaDll' DllEntry='SchedApplyConfigToFile' Execute='immediate'/>
+        <CustomAction Id='ApplyConfigToFile'      BinaryKey='CaDll' DllEntry='ApplyConfigToFile'      Execute='deferred'/>
+
         <!-- This CA just strips the trailing slash as a workaround
          for the shortcut argument to cmd.exe /k goal.exe -d -->
         <CustomAction Id='RemoveTrailingSlash' BinaryKey='CaDll' DllEntry='RemoveTrailingSlash' />
 
         <!-- CAs to read and write config file to/from Node Configuration UI -->
-        <CustomAction Id='ApplyConfigToFile'   BinaryKey='CaDll' DllEntry='ApplyConfigToFile' />
         <CustomAction Id='ReadConfigFromFile'   BinaryKey='CaDll' DllEntry='ReadConfigFromFile' Return='ignore' />
 
         <!--- Other CAs Exports -->
@@ -110,8 +113,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <CustomAction Id='RequestUninstallDataDir'      BinaryKey='CaDll' DllEntry='RequestUninstallDataDir' Execute='immediate' Return='check' />
 
         <InstallExecuteSequence>
+            <Custom Action="SchedApplyConfigToFile" After="InstallFiles">NOT WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
             <Custom Action="RemoveTrailingSlash" After="CostFinalize">NOT REMOVE</Custom>
-            <Custom Action="ApplyConfigToFile" After="InstallFinalize">NOT WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
             <Custom Action="RequestUninstallDataDir" After="RemoveFiles">NOT UPGRADINGPRODUCTCODE AND REMOVE~="ALL"</Custom>
             <Custom Action="StopService" Before="InstallValidate"></Custom>
         </InstallExecuteSequence>
