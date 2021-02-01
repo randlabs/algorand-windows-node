@@ -160,7 +160,36 @@ extern "C" UINT EXPORT SchedApplyConfigToFile(MSIHANDLE hInstall)
     return ScheduleDeferredCA(hInstall, L"ApplyConfigToFile", szActionData);
 }
 
-extern "C" UINT EXPORT RequestUninstallDataDir (MSIHANDLE hInstall)
+extern "C" UINT EXPORT RequestUninstallDataDir(MSIHANDLE hInstall)
+{
+    int ret = 0;
+    wchar_t szCaData[MAX_ACTION_DATA] = { 0 };
+    DWORD cchCaData = MAX_ACTION_DATA;
+    MsiGetPropertyW(hInstall, L"CustomActionData", szCaData, &cchCaData);
+ 
+    szCaData[wcslen(szCaData)+1] = wchar_t(0); // Ensure double zero at end for ShFileOperationW
+
+    WriteLog(hInstall, L"algorand-install-CA: Initiating SHFileOperationW to remove %s", szCaData);
+
+    SHFILEOPSTRUCTW fop;
+    ZeroMemory(&fop, sizeof(SHFILEOPSTRUCTW));
+    fop.wFunc = FO_DELETE;
+    fop.pFrom = szCaData;
+    fop.fFlags = FOF_NO_UI;
+    if ( (ret = SHFileOperationW(&fop)) )
+    {
+        WriteLog(hInstall, L"algorand-install-CA: SHFileOperationW FAILED with code %d", ret);
+        return ERROR_IO_DEVICE;
+    }
+    else 
+    {
+        WriteLog(hInstall, L"algorand-install-CA: SHFileOperationW success.", ret);
+    }
+
+    return ERROR_SUCCESS;
+}
+
+extern "C" UINT EXPORT SchedRequestUninstallDataDir (MSIHANDLE hInstall)
 {
     MSIHANDLE hRec = MsiCreateRecord(0);
     MsiRecordSetStringW(hRec, 0, L"Do you want to keep your data directory?"
@@ -179,50 +208,25 @@ extern "C" UINT EXPORT RequestUninstallDataDir (MSIHANDLE hInstall)
         DWORD cchDir = MAX_PATH;
 
         MsiGetPropertyW(hInstall, L"ALGORANDNETDATAFOLDER", szDir, &cchDir);
-        
-        WriteLog(hInstall, L"algorand-install-CA: Initiating SHFileOperationW to remove %s", szDir);
-
-        szDir[wcslen(szDir)+1] = wchar_t(0); // Ensure double zero at end for ShFileOperationW
-
-        SHFILEOPSTRUCTW fop;
-        ZeroMemory(&fop, sizeof(SHFILEOPSTRUCTW));
-        fop.wFunc = FO_DELETE;
-        fop.pFrom = szDir;
-        fop.fFlags = FOF_NO_UI;
-        if ( (ret = SHFileOperationW(&fop)) )
-        {
-            WriteLog(hInstall, L"algorand-install-CA: SHFileOperationW FAILED with code %d", ret);
-            return ERROR_IO_DEVICE;
-        }
-        else 
-        {
-             WriteLog(hInstall, L"algorand-install-CA: SHFileOperationW success.", ret);
-        }
+        return ScheduleDeferredCA(hInstall, L"RequestUninstallDataDir", szDir);
     }
     return ERROR_SUCCESS;
 }
 
-static DWORD StartServiceRoutine (MSIHANDLE hInstall)
+extern "C" DWORD EXPORT StartServiceRoutine (MSIHANDLE hInstall)
 {
+    wchar_t szCaData[MAX_ACTION_DATA] = { 0 };
+    DWORD cchCaData = MAX_ACTION_DATA;
+    MsiGetPropertyW(hInstall, L"CustomActionData", szCaData, &cchCaData);
+
     auto hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (!hSCM)
         return GetLastError();
 
-    wchar_t szNetwork[8];
-    DWORD cchNetwork = 8;
-    MsiGetPropertyW(hInstall, L"THISNETWORK", szNetwork, &cchNetwork);
-
-    if (  (wcsncmp(szNetwork, L"testnet" ,8) != 0)
-        && (wcsncmp(szNetwork, L"betanet" ,8) != 0)
-        && (wcsncmp(szNetwork,  L"mainnet" ,8) != 0))
-        {
-            WriteLog(hInstall, L"algorand-install-CA: StartServiceRoutine: bad network name: %s", szNetwork);
-            return ERROR_INVALID_NETNAME;
-        }
         
     wchar_t szSvcName[32] = {0};
     wcsncpy(szSvcName, L"algodsvc_", 9);
-    wcsncat(szSvcName, szNetwork, wcslen(szNetwork));
+    wcsncat(szSvcName, szCaData, wcslen(szCaData));
 
     auto hService = OpenService(hSCM, szSvcName, SERVICE_ALL_ACCESS);
     if(!hService)
@@ -289,25 +293,17 @@ static DWORD StartServiceRoutine (MSIHANDLE hInstall)
 
 extern "C" UINT EXPORT StopService (MSIHANDLE hInstall)
 {
+    wchar_t szCaData[MAX_ACTION_DATA] = { 0 };
+    DWORD cchCaData = MAX_ACTION_DATA;
+    MsiGetPropertyW(hInstall, L"CustomActionData", szCaData, &cchCaData);
+
     auto hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (!hSCM)
         return GetLastError();
-
-    wchar_t szNetwork[8];
-    DWORD cchNetwork = 8;
-    MsiGetPropertyW(hInstall, L"THISNETWORK", szNetwork, &cchNetwork);
-
-    if (  (wcsncmp(szNetwork, L"testnet" ,8) != 0)
-        && (wcsncmp(szNetwork, L"betanet" ,8) != 0)
-        && (wcsncmp(szNetwork,  L"mainnet" ,8) != 0))
-        {
-            WriteLog(hInstall, L"algorand-install-CA: StopService. bad or no network name: %s", szNetwork);
-            return ERROR_INVALID_NETNAME;
-        }
         
     wchar_t szSvcName[32] = {0};
     wcsncpy(szSvcName, L"algodsvc_", 9);
-    wcsncat(szSvcName, szNetwork, wcslen(szNetwork));
+    wcsncat(szSvcName, szCaData, wcslen(szCaData));
 
     auto hService = OpenService(hSCM, szSvcName, SERVICE_ALL_ACCESS);
     if(!hService)
@@ -347,7 +343,7 @@ extern "C" UINT EXPORT StopService (MSIHANDLE hInstall)
     return ERROR_SUCCESS;
 }
 
-extern "C" UINT EXPORT StartServiceOnExit (MSIHANDLE hInstall)
+extern "C" UINT EXPORT SchedStartServiceOnExit (MSIHANDLE hInstall)
 {
     wchar_t szIsChecked[4];
     DWORD cchIsChecked = 4;
@@ -355,12 +351,38 @@ extern "C" UINT EXPORT StartServiceOnExit (MSIHANDLE hInstall)
     
     if (!wcsncmp(szIsChecked, L"1", 4))
     {
-        return StartServiceRoutine(hInstall);
+        wchar_t szNetwork[8];
+        DWORD cchNetwork = 8;
+        MsiGetPropertyW(hInstall, L"THISNETWORK", szNetwork, &cchNetwork);
+
+        if (  (wcsncmp(szNetwork, L"testnet" ,8) != 0)
+            && (wcsncmp(szNetwork, L"betanet" ,8) != 0)
+            && (wcsncmp(szNetwork,  L"mainnet" ,8) != 0))
+            {
+                WriteLog(hInstall, L"algorand-install-CA: StartServiceRoutine: bad network name: %s", szNetwork);
+                return ERROR_INVALID_NETNAME;
+            }
+       
+        return ScheduleDeferredCA(hInstall, L"StartServiceRoutine", szNetwork);
     }
 
     return ERROR_SUCCESS;
 }
 
+extern "C" UINT EXPORT SchedStopService(MSIHANDLE hInstall)
+{
+    wchar_t szNetwork[8];
+    DWORD cchNetwork = 8;
+    MsiGetPropertyW(hInstall, L"THISNETWORK", szNetwork, &cchNetwork);
+
+    if ((wcsncmp(szNetwork, L"testnet", 8) != 0) && (wcsncmp(szNetwork, L"betanet", 8) != 0) && (wcsncmp(szNetwork, L"mainnet", 8) != 0))
+    {
+        WriteLog(hInstall, L"algorand-install-CA: SchedStopService: bad network name: %s", szNetwork);
+        return ERROR_INVALID_NETNAME;
+    }
+
+    return ScheduleDeferredCA(hInstall, L"StopService", szNetwork);
+}
 
 extern "C" UINT EXPORT RemoveTrailingSlash (MSIHANDLE hInstall) 
 {
@@ -497,7 +519,7 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
                 auto configJson = json::parse(buffer.get(), nullptr, false);
                 if (configJson != json::value_t::discarded)
                 {
-                    std::string addr = wcscmp(szPublicAccess, L"1") == 0 ? ":" : "127.0.0.1"; 
+                    std::string addr = wcscmp(szPublicAccess, L"1") == 0 ? ":" : "127.0.0.1:"; 
                     configJson["DNSBootstrapID"] = std::string(wNetwork).append(".algorand.network");
                     configJson["EndpointAddress"] = addr.append(wPort);
                     configJson["Archival"] = wcscmp(szEnableArchival, L"1") == 0 ? true : false;

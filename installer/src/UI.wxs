@@ -82,7 +82,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
             <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
 
-            <Publish Dialog="ExitDialog" Control="Finish" Order="1" Event="DoAction" Value="StartServiceOnExit">WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT</Publish>
+            <Publish Dialog="ExitDialog" Control="Finish" Order="1" Event="DoAction" Value="SchedStartServiceOnExit">WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT</Publish>
 
             <Property Id="ARPNOMODIFY" Value="1" />
         </UI>

@@ -99,6 +99,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <CustomAction Id='SchedApplyConfigToFile' BinaryKey='CaDll' DllEntry='SchedApplyConfigToFile' Execute='immediate'/>
         <CustomAction Id='ApplyConfigToFile'      BinaryKey='CaDll' DllEntry='ApplyConfigToFile'      Execute='deferred' Impersonate="no"/>
 
+        <CustomAction Id='SchedRequestUninstallDataDir' BinaryKey='CaDll' DllEntry='SchedRequestUninstallDataDir' Execute='immediate'/>
+        <CustomAction Id='RequestUninstallDataDir'      BinaryKey='CaDll' DllEntry='RequestUninstallDataDir' Execute='deferred' Impersonate="no" Return='check' />
+        
+        <CustomAction Id='SchedStartServiceOnExit'   BinaryKey='CaDll' DllEntry='SchedStartServiceOnExit' Execute="immediate" Return="check"/>
+        <CustomAction Id='StartServiceRoutine'  BinaryKey='CaDll' DllEntry='StartServiceRoutine' Execute="deferred" Impersonate="no" Return="ignore"/>
+        
+        <CustomAction Id='SchedStopService'   BinaryKey='CaDll' DllEntry='SchedStopService' Execute="immediate" Return="check" />
+        <CustomAction Id='StopService'   BinaryKey='CaDll' DllEntry='StopService' Execute="deferred" Impersonate="no" Return="ignore"/>
+
         <!-- This CA just strips the trailing slash as a workaround
          for the shortcut argument to cmd.exe /k goal.exe -d -->
         <CustomAction Id='RemoveTrailingSlash' BinaryKey='CaDll' DllEntry='RemoveTrailingSlash' />
@@ -109,15 +118,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <!--- Other CAs Exports -->
         <CustomAction Id='ValidatePortNumber'           BinaryKey='CaDll' DllEntry='ValidatePortNumber' />
         <CustomAction Id='SetMsgDlgProp_InvalidPort'    BinaryKey='CaDll' DllEntry='SetMsgDlgProp_InvalidPort' />
-        <CustomAction Id='StartServiceOnExit'           BinaryKey='CaDll' DllEntry='StartServiceOnExit' />
-        <CustomAction Id='StopService'                  BinaryKey='CaDll' DllEntry='StopService' Execute="immediate" Return="ignore" />
-        <CustomAction Id='RequestUninstallDataDir'      BinaryKey='CaDll' DllEntry='RequestUninstallDataDir' Execute='immediate' Return='check' />
 
         <InstallExecuteSequence>
             <Custom Action="SchedApplyConfigToFile" After="InstallFiles">NOT WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
             <Custom Action="RemoveTrailingSlash" After="CostFinalize">NOT REMOVE</Custom>
-            <Custom Action="RequestUninstallDataDir" After="RemoveFiles">NOT UPGRADINGPRODUCTCODE AND REMOVE~="ALL"</Custom>
-            <Custom Action="StopService" Before="InstallValidate"></Custom>
+            <Custom Action="SchedRequestUninstallDataDir" After="RemoveFiles">NOT UPGRADINGPRODUCTCODE AND REMOVE~="ALL"</Custom>
+            <Custom Action="SchedStopService" Before="StopServices"></Custom>
         </InstallExecuteSequence>
 
         <InstallUISequence>
