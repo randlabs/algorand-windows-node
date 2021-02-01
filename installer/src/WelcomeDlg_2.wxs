@@ -32,7 +32,7 @@
 
                 <Control Id="Description2" Type="Text" X="135" Y="180" Width="220" Height="60" Transparent="yes" NoPrefix="yes" 
                     Text="Adapted by Rand Labs with the support of Algorand Foundation. Algorand Node developed by Algorand Inc." />
-                <Control Id="Link1" Type="Hyperlink" X="135" Y="210" Width="100" Height="20">
+                <Control Id="Link1" Type="Hyperlink" X="135" Y="210" Width="40" Height="20" >
                     <Text><![CDATA[<a href="https://randlabs.io/">randlabs.io</a>]]></Text>
                 </Control>
                 <Control Id="Link2" Type="Hyperlink" X="190" Y="210" Width="100" Height="20">

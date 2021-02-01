@@ -80,8 +80,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <!-- Configuration defaults -->
 
         <Property Id="PORTNUMBER" Value="8081" Secure="yes"/>
-        <Property Id="ENABLEARCHIVALMODE"  Secure="yes"/>
+        <Property Id="ENABLEARCHIVALMODE" Secure="yes"/>
         <Property Id="THISNETWORK" Value="$(var.NETWORK)" Secure="yes"/>
+        <Property Id="PUBLICACCESS" Secure="yes"/>
 
         <!-- Windows installer Add/remove programs properties -->
 
@@ -96,7 +97,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <!-- Scheduling CAs -->
         <CustomAction Id='SchedApplyConfigToFile' BinaryKey='CaDll' DllEntry='SchedApplyConfigToFile' Execute='immediate'/>
-        <CustomAction Id='ApplyConfigToFile'      BinaryKey='CaDll' DllEntry='ApplyConfigToFile'      Execute='deferred'/>
+        <CustomAction Id='ApplyConfigToFile'      BinaryKey='CaDll' DllEntry='ApplyConfigToFile'      Execute='deferred' Impersonate="no"/>
 
         <!-- This CA just strips the trailing slash as a workaround
          for the shortcut argument to cmd.exe /k goal.exe -d -->

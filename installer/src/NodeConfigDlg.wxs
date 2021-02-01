@@ -35,9 +35,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="14" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Node Configuration" />
                 <Control Type="CheckBox" CheckBoxValue="1" Id="chkArchival" Width="250" Height="17" X="135" Y="172" Text="Enable Archival Mode" Property="ENABLEARCHIVALMODE">
                 </Control>
-                <!-- <Control Type="Text" Id="CheckboxText" Width="190" Height="17" X="150" Y="172" Text="Enable Archival Mode" Transparent="yes" /> -->
                 <Control Type="Text" Id="Port" Width="40" Height="14" X="135" Y="79" Text="Port" Transparent="yes" />
                 <Control Type="Edit" Id="edtPortNumber" Width="50" Height="15" X="172" Y="79" Property="PORTNUMBER" />
+                <Control Type="CheckBox" CheckBoxValue="1" Id="chkPublicAccess" Width="68" Height="17" X="135" Y="105" Text="Public Access" Property="PUBLICACCESS" />
             </Dialog>
             <!-- <InstallUISequence>
                 <Show Dialog="NodeConfigDlg" Before="VerifyReadyDlg" Overridable="yes">NOT Installed</Show>
