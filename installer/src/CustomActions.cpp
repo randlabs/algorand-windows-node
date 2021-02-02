@@ -422,31 +422,47 @@ extern "C" UINT EXPORT ReadConfigFromFile (MSIHANDLE hInstall)
         DWORD dwBytesRead = 0;
         if (dwFileSize > 0)
         {
-            auto buffer = std::make_unique<char[]>(dwFileSize);
+            auto buffer = std::make_unique<char[]>(dwFileSize + 1);
             if (ReadFile(hFile, buffer.get(), dwFileSize, &dwBytesRead, NULL))
             {
                 WriteLog(hInstall, L"algorand-install-CA: ReadConfigFromFile Read %d bytes from config.json", dwBytesRead);
 
-                auto configJson = json::parse(buffer.get(), nullptr, false);
-                if (configJson != json::value_t::discarded) 
+                auto configJson = json::parse(buffer.get(), nullptr, false, true);
+                
+                if (!configJson.is_discarded()) 
                 {
-                    wchar_t szPortNum[8];
+                    wchar_t szPortNum[8] = { 0 };
 
-                    bool archival = static_cast<bool>(configJson["Archival"]) ? "true" : "false";
+                    bool archival = configJson["Archival"].get<bool>();
                     std::string endpointAddr = configJson["EndpointAddress"]; 
-                    
                     endpointAddr.erase(0, endpointAddr.find_first_not_of(" \t"));
-                    StringCchPrintf(szPortNum, 8, L"%d", std::stoi(endpointAddr.substr(endpointAddr.find(":") + 1)));
 
-                    WriteLog(hInstall, L"algorand-install-CA: Found config: archival %d, port %s", archival, szPortNum);
-                    MsiSetPropertyW(hInstall, L"ENABLEARCHIVALMODE", archival ? L"1" : L"0");
-                    MsiSetPropertyW(hInstall, L"PORTNUMBER", szPortNum);
-                    MsiSetPropertyW(hInstall, L"PUBLICACCESS", (endpointAddr.at(0) == ':') ? L"1" : L"0");
+                    if (endpointAddr.find(":") == std::string::npos) {
+                         WriteLog(hInstall, L"algorand-install-CA: Bad EndpointAddress entry %s", endpointAddr.c_str());
+                    }
+                    else 
+                    {
+                        StringCchPrintf(szPortNum, 8, L"%d", std::stoi(endpointAddr.substr(endpointAddr.find(":") + 1)));
+                        MsiSetPropertyW(hInstall, L"PORTNUMBER", szPortNum);
+
+                        if (endpointAddr.at(0) == ':')
+                        {
+                            MsiSetPropertyW(hInstall, L"PUBLICACCESS", L"1");
+                        }
+                    }
+                    if (archival)
+                    {
+                        MsiSetPropertyW(hInstall, L"ENABLEARCHIVALMODE",  L"1");
+                    }
                 }
                 else 
                 {
                     WriteLog(hInstall, L"algorand-install-CA: ReadConfigFromFile cannot parse existing JSON, ignoring");
                 }                
+            }
+            else 
+            {
+                WriteLog(hInstall, L"algorand-install-CA: ReadFile error %d", GetLastError());
             }
         }
 
@@ -487,7 +503,7 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
 
     HANDLE hFile = CreateFileW(configFile.c_str(),
                                GENERIC_READ|GENERIC_WRITE,
-                               0,
+                               FILE_SHARE_READ,
                                NULL,
                                OPEN_EXISTING,
                                FILE_ATTRIBUTE_NORMAL,
@@ -507,7 +523,7 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
         }
         else
         {
-            auto buffer = std::make_unique<char[]>(dwFileSize);
+            auto buffer = std::make_unique<char[]>(dwFileSize + 1);
             if (ReadFile(hFile, buffer.get(), dwFileSize, &dwBytesRead, NULL))
             {
                 char wNetwork[8], wPort[8];
@@ -517,7 +533,7 @@ extern "C" UINT EXPORT ApplyConfigToFile (MSIHANDLE hInstall)
                 WriteLog(hInstall, L"algorand-install-CA: ApplyConfigToFile Read %d bytes from config.json", dwBytesRead);
 
                 auto configJson = json::parse(buffer.get(), nullptr, false);
-                if (configJson != json::value_t::discarded)
+                if (!configJson.is_discarded())
                 {
                     std::string addr = wcscmp(szPublicAccess, L"1") == 0 ? ":" : "127.0.0.1:"; 
                     configJson["DNSBootstrapID"] = std::string(wNetwork).append(".algorand.network");
