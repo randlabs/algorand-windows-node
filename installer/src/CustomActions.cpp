@@ -343,11 +343,88 @@ extern "C" UINT EXPORT StopService (MSIHANDLE hInstall)
     return ERROR_SUCCESS;
 }
 
-extern "C" UINT EXPORT SchedStartServiceOnExit (MSIHANDLE hInstall)
+extern "C" UINT EXPORT SetServiceStartMode (MSIHANDLE hInstall)
+{
+    wchar_t szCaData[MAX_ACTION_DATA] = { 0 };
+    DWORD cchCaData = MAX_ACTION_DATA;
+    int numArgs;
+    MsiGetPropertyW(hInstall, L"CustomActionData", szCaData, &cchCaData);
+
+    LPWSTR* argv = CommandLineToArgvW(szCaData, &numArgs );
+
+    if (numArgs != 2) 
+    {
+        WriteLog(hInstall, L"algorand-install-CA: invalid num of arguments %d (expected 2)", numArgs);
+        return ERROR_BAD_ARGUMENTS;
+    }
+
+    LPWSTR szNetwork = argv[0];
+    LPWSTR szStartType = argv[1];
+
+    auto hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    if (!hSCM)
+        return GetLastError();
+
+    wchar_t szSvcName[32] = {0};
+    wcsncpy(szSvcName, L"algodsvc_", 9);
+    wcsncat(szSvcName, szCaData, wcslen(szNetwork));
+
+    auto hService = OpenService(hSCM, szSvcName, SERVICE_ALL_ACCESS);
+    if(!hService)
+    {
+        CloseServiceHandle(hSCM);
+        return  GetLastError();
+    }
+
+    if (!ChangeServiceConfigW(hService,
+        SERVICE_NO_CHANGE,
+        _wtoi(szStartType),
+        SERVICE_NO_CHANGE,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL))
+    {
+        WriteLog(hInstall, L"algorand-install-CA: cannot change service boot mode, status: %d", GetLastError());
+    }
+
+    CloseServiceHandle(hService); 
+    CloseServiceHandle(hSCM);
+    return ERROR_SUCCESS;
+
+}
+
+extern "C" UINT EXPORT SchedSetServiceStartMode(MSIHANDLE hInstall)
 {
     wchar_t szIsChecked[4];
     DWORD cchIsChecked = 4;
-    MsiGetPropertyW(hInstall, L"WIXUI_EXITDIALOGOPTIONALCHECKBOX", szIsChecked, &cchIsChecked);
+    MsiGetPropertyW(hInstall, L"STARTSVC_AT_BOOT", szIsChecked, &cchIsChecked);
+
+    DWORD startMode = (wcsncmp(szIsChecked, L"1", 4) == 0 ? SERVICE_AUTO_START : SERVICE_DEMAND_START);
+
+    wchar_t szActionData[MAX_ACTION_DATA];
+    wchar_t szNetwork[8];
+    DWORD cchNetwork = 8;
+    MsiGetPropertyW(hInstall, L"THISNETWORK", szNetwork, &cchNetwork);
+
+    if ((wcsncmp(szNetwork, L"testnet", 8) != 0) && (wcsncmp(szNetwork, L"betanet", 8) != 0) && (wcsncmp(szNetwork, L"mainnet", 8) != 0))
+    {
+        WriteLog(hInstall, L"algorand-install-CA: StartServiceRoutine: bad network name: %s", szNetwork);
+        return ERROR_INVALID_NETNAME;
+    }
+
+    StringCchPrintfW(szActionData, MAX_ACTION_DATA, L"%s %d", szNetwork, startMode);
+    return ScheduleDeferredCA(hInstall, L"SetServiceStartMode", szActionData);
+}
+
+extern "C" UINT EXPORT SchedStartService (MSIHANDLE hInstall)
+{
+    wchar_t szIsChecked[4];
+    DWORD cchIsChecked = 4;
+    MsiGetPropertyW(hInstall, L"STARTSVC_AT_INSTALL", szIsChecked, &cchIsChecked);
     
     if (!wcsncmp(szIsChecked, L"1", 4))
     {

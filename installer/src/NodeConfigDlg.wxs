@@ -38,6 +38,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <Control Type="Text" Id="Port" Width="40" Height="14" X="135" Y="79" Text="Port" Transparent="yes" />
                 <Control Type="Edit" Id="edtPortNumber" Width="50" Height="15" X="172" Y="79" Property="PORTNUMBER" />
                 <Control Type="CheckBox" CheckBoxValue="1" Id="chkPublicAccess" Width="68" Height="17" X="135" Y="105" Text="Public Access" Property="PUBLICACCESS" />
+                <Control Type="CheckBox" Id="chkStartSvcAtExit" Width="163" Height="11" X="135" Y="202" Text="Start service on installation" CheckBoxValue="1" Property="STARTSVC_AT_INSTALL">
+                    <Condition Action="hide">Installed</Condition>
+                    <Condition Action="show">NOT Installed</Condition>
+                </Control>
+                <Control Type="CheckBox" Id="chkStartSvcAtBoot" Width="146" Height="12" X="135" Y="214" Text="Start service at system boot" CheckBoxValue="1" Property="STARTSVC_AT_BOOT">
+                    <Condition Action="hide">Installed</Condition>
+                    <Condition Action="show">NOT Installed</Condition>
+                </Control>
             </Dialog>
             <!-- <InstallUISequence>
                 <Show Dialog="NodeConfigDlg" Before="VerifyReadyDlg" Overridable="yes">NOT Installed</Show>

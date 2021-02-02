@@ -24,8 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         
 
         <UI Id="WixUI_InstallDir_Algorand">
-            <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Start Algorand Node Service now" />
-            <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+            <!-- <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Start Algorand Node Service now" />
+            <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" /> -->
             <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
             <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
             <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
@@ -82,7 +82,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
             <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
 
-            <Publish Dialog="ExitDialog" Control="Finish" Order="1" Event="DoAction" Value="SchedStartServiceOnExit">WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT</Publish>
+            <!-- <Publish Dialog="ExitDialog" Control="Finish" Order="1" Event="DoAction" Value="SchedStartServiceOnExit">WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT</Publish> -->
 
             <Property Id="ARPNOMODIFY" Value="1" />
         </UI>
