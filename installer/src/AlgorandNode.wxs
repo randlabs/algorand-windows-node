@@ -222,33 +222,34 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
             <Directory Id='ProgramFiles64Folder' Name='PFiles'>
                 <Directory Id='INSTALLDIR' Name='Algorand'>
-                <Directory Id='common' Name='Common'>
-                    <Directory Id='commonbin' Name='Bin'>
-
-                    <!-- algodsvc Service Setup -->
-                    <Component Id='AlgorandNodeService' Guid="244f1bfb-7ceb-4c05-b6b4-9dd1f7a5f88d">
-                        <ServiceInstall
-                            Id="AlgodsvcInstaller"
-                            Type="ownProcess"
-                            Name="algodsvc_$(var.NETWORK)"
-                            DisplayName="Algorand Node Service ($(var.NETWORK))"
-                            Description="Controller service for the Algorand node daemon (algod) under $(var.NETWORK) network"
-                            Start="auto"
-                            Account= "NT Authority\NetworkService"
-                            Arguments="$(var.NETWORK) &quot;[netspecificdir]algod.exe&quot;  &quot;[NodeDataDirAlgorandDataNetSpecific]" 
-                            ErrorControl="normal"/>
-                        <ServiceControl Id="Sc_AlgodSvc" Name="algodsvc_$(var.NETWORK)" Remove="uninstall" />  
-                        <File Id="algodsvc" Name="algodsvc.exe" DiskId="1" Source="$(var.SVCBINFOLDER)/algodsvc.exe" KeyPath="yes" />
-                        <RegistryKey Key="SYSTEM\CurrentControlSet\Services\EventLog\Application\Algorand Node Service" Root="HKLM">
-                            <RegistryValue Id="REG_EvMsgFile" Type="string" Name="EventMessageFile" Value="[commonbin]algodsvc.exe" />
-                        </RegistryKey>
-                    </Component>
-                    </Directory>
-                </Directory>
 
                 <!-- Binary tool  directory setup -->
 
-                <Directory Id='netspecificdir' Name='$(var.NETWORK)'>
+                    <Directory Id='netspecificdir' Name='$(var.NETWORK)'>
+                        <Directory Id='systemDir' Name='System'>
+                        
+                        <!-- algodsvc Service Setup -->
+
+                        <Component Id='AlgorandNodeService' Guid="*">
+                            <ServiceInstall
+                                Id="AlgodsvcInstaller"
+                                Type="ownProcess"
+                                Name="algodsvc_$(var.NETWORK)"
+                                DisplayName="Algorand Node Service ($(var.NETWORK))"
+                                Description="Controller service for the Algorand node daemon (algod) under $(var.NETWORK) network"
+                                Start="auto"
+                                Account= "NT Authority\NetworkService"
+                                Arguments="$(var.NETWORK) &quot;[netspecificdir]algod.exe&quot;  &quot;[NodeDataDirAlgorandDataNetSpecific]" 
+                                ErrorControl="normal"/>
+                            <ServiceControl Id="Sc_AlgodSvc" Name="algodsvc_$(var.NETWORK)" Remove="uninstall" />  
+                            <File Id="algodsvc" Name="algodsvc.exe" DiskId="1" Source="$(var.SVCBINFOLDER)/algodsvc.exe" KeyPath="yes" />
+                            <RegistryKey Key="SYSTEM\CurrentControlSet\Services\EventLog\Application\Algorand Node Service" Root="HKLM">
+                                <RegistryValue Id="REG_EvMsgFile" Type="string" Name="EventMessageFile" Value="[systemDir]algodsvc.exe" />
+                            </RegistryKey>
+                        </Component>
+
+                        </Directory>
+
                     <Component Id='BINCOMP_algocfg' Guid='*'>
                         <File Id="algocfg" Name="algocfg.exe" DiskId="1" Source="$(var.GOBINFOLDER)/algocfg.exe" KeyPath="yes" />
                     </Component>
