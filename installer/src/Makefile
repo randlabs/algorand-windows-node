@@ -19,35 +19,44 @@
 
 CABASENAME=CustomActions
 CASOURCE=$(CABASENAME).cpp
+PCHSOURCE=./inc/json.hpp
+PCHOUT=json.hpp.gch
 CADLL=$(CABASENAME).dll
 CC=g++
 CFLAGS=-Wall -Wextra -static -shared -pedantic -O2 -g -fanalyzer -DFORTIFY_SOURCE=2 -fstack-protector -lmsi -municode
 SOURCES=AlgorandNode.wxs UI.wxs WelcomeDlg_2.wxs NodeConfigDlg.wxs MessageDlg.wxs
-OBJ=AlgorandNode.wixobj WelcomeDlg_2.wixobj UI.wixobj NodeConfigDlg.wixobj MessageDlg.wixobj
-CANDLE=$(WIX)bin\candle.exe
-LIGHT=$(WIX)bin\light.exe
+SUFFIX=$(ALGOVERSION)-$(NETWORK)
+OBJDIR=./obj-$(SUFFIX)/
+MSIDIR=./msi-$(SUFFIX)/
+OBJ=$(OBJDIR)AlgorandNode.wixobj 
+CANDLE=$(WIX)bin/candle.exe
+LIGHT=$(WIX)bin/light.exe
 GOBINFOLDER=$(HOME)/go/bin
 SVCBINFOLDER=../../algodsvc
 ALGOVERSION := $(shell $(GOBINFOLDER)/goal.exe --version | awk 'FNR == 2 { print $$1 }' | awk -F "." 'BEGIN{OFS=""} { print $$1,".",$$2,".",$$3 }')
-MSI=AlgorandNode-$(ALGOVERSION)-$(NETWORK).msi
-THISPRODUCTID := $(shell echo -n $(ALGOVERSION)-$(NETWORK) | sha256sum | cut -c 1-32 | sed 's/./&-/8;s/./&-/13;s/./&-/18;s/./&-/23')
+MSI=$(MSIDIR)AlgorandNode-$(SUFFIX).msi
+THISPRODUCTID := $(shell echo -n $(SUFFIX) | sha256sum | cut -c 1-32 | sed 's/./&-/8;s/./&-/13;s/./&-/18;s/./&-/23')
 
-all: $(CADLL) $(OBJ) $(MSI) 
+all: $(PCHOUT) $(CADLL) $(OBJ) $(MSI) 
 
-$(CADLL): $(CASOURCE)
-	$(CC) $(CASOURCE)  -o $(CADLL) $(CFLAGS)
+$(PCHOUT): $(PCHSOURCE)
+	$(CC) $(PCHSOURCE) -o $(PCHOUT) $(CFLAGS)
+
+$(CADLL): $(CASOURCE) $(PCHOUT)
+	$(CC) $(CASOURCE) -include $(PCHSOURCE) -o $(CADLL) $(CFLAGS)
 
 $(OBJ): $(SOURCES) $(CADLL)
-	"$(CANDLE)" $(SOURCES) -arch x64 -dTHISPRODUCTID=$(THISPRODUCTID) -dALGOVERSION=$(ALGOVERSION) -dGOBINFOLDER=$(GOBINFOLDER) -dSVCBINFOLDER=$(SVCBINFOLDER) -dNETWORK=$(NETWORK) -v
+	"$(CANDLE)" $(SOURCES) -out "$(OBJDIR)" -arch x64 -dTHISPRODUCTID=$(THISPRODUCTID) -dALGOVERSION=$(ALGOVERSION) -dGOBINFOLDER=$(GOBINFOLDER) -dSVCBINFOLDER=$(SVCBINFOLDER) -dNETWORK=$(NETWORK) -v
 
 $(MSI): $(OBJ)
-	"$(LIGHT)" $(OBJ) -ext WixUIExtension -out $(MSI) -reusecab -cc cabs -v
+	"$(LIGHT)" $(OBJDIR)*.wixobj -ext WixUIExtension -out $(MSI) -reusecab -cc cabs -v
 
 clean:
 	@rm -f $(CADLL)
-	@rm -f *.wixobj
-	@rm -f *.wixpdb
-	@rm -f *.msi
+	@rm -f *.gch
+	@rm -f $(OBJDIR)\*.wixobj
+	@rm -f $(MSIDIR)\*.wixpdb
+	@rm -f $(MSIDIR)\*.msi
 
 
 
