@@ -60,6 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         Language='1033' Codepage='1252' 
         Version='$(var.ALGOVERSION)'>
         <Package Id='*' Keywords='Installer' Description="Algorand Node Installer for Windows ($(var.NETWORK))"
+            InstallPrivileges="elevated"
             InstallScope="perMachine"
             Manufacturer='Rand Labs'
             Comments='(c) Rand Labs, AGPL3 Licensed.' 
@@ -128,7 +129,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Custom Action="SchedApplyConfigToFile" After="InstallFiles">NOT WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
             <Custom Action="RemoveTrailingSlash" After="CostFinalize">NOT REMOVE</Custom>
             <Custom Action="SchedRequestUninstallDataDir" After="RemoveFiles">NOT UPGRADINGPRODUCTCODE AND REMOVE~="ALL"</Custom>
-            <Custom Action="SchedStopService" Before="StopServices"></Custom>
+            <Custom Action="SchedStopService" Before="StopServices">Installed OR WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="SchedSetServiceStartMode" After="InstallServices">NOT Installed</Custom>
             <Custom Action="SchedStartService" After="StartServices">NOT Installed</Custom>
         </InstallExecuteSequence>
@@ -236,7 +237,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                             Account= "NT Authority\NetworkService"
                             Arguments="$(var.NETWORK) &quot;[netspecificdir]algod.exe&quot;  &quot;[NodeDataDirAlgorandDataNetSpecific]" 
                             ErrorControl="normal"/>
-                        <!-- <ServiceControl Id="Sc_AlgodSvc" Name="algodsvc_$(var.NETWORK)" Remove="uninstall" Stop="both" Wait="yes"/>  -->
+                        <ServiceControl Id="Sc_AlgodSvc" Name="algodsvc_$(var.NETWORK)" Remove="uninstall" />  
                         <File Id="algodsvc" Name="algodsvc.exe" DiskId="1" Source="$(var.SVCBINFOLDER)/algodsvc.exe" KeyPath="yes" />
                         <RegistryKey Key="SYSTEM\CurrentControlSet\Services\EventLog\Application\Algorand Node Service" Root="HKLM">
                             <RegistryValue Id="REG_EvMsgFile" Type="string" Name="EventMessageFile" Value="[commonbin]algodsvc.exe" />
