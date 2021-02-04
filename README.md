@@ -30,12 +30,25 @@ Please read the following usage guidelines and advices.
 * Using the _Maintenance_ or _Repair_ Dialog from the installation MSI does not work.  Please use the **Add/Remove Programs** entry in the **System Settings** panel.
 
 
-
 ## Installation
 
-To launch the installation process just double click the MSI file, accept the license agreement, choose your base directory, configure your node with your desired options (port and archival mode) and wait for the installer to finish.  
+> :lock: Administrative rights are required to complete the installation.
 
-At finish, the installer defaults to start automatically the Algorand Node service.
+To launch the installation process just double click the MSI file.  Read and accept the license agreement and choose your target installation directory. We recommend to use the default installation place.
+
+The installer will display a dialog to configure your node with the following options:
+
+* **Port Number** A port where the node server will listen to. You can select zero for autoconfiguration, or a fixed port number. Take caution to choose a port that  does not clash with existing software. Also, you may need to open your firewall for certain range of ports.
+
+* **Public Access** If you select this option, your server will be accessible from the outside.
+
+* **Archival Mode** Enabling Archival will synchronize the entire ledger, greatly increasing disk requirements. 
+
+* **Start service at boot** Self-descriptive, check if you want to start Algorand Node service with your machine. Otherwise, it will be set in "demand" mode, requiring manual start through the **Services** management console or the command-line.
+
+* **Start on installation** Check if you want  to start the Algorand node service and start syncing at end of installation. 
+
+Once you are sure, press Continue and wait the installer to finish.
 
 The installer will create:
 
@@ -44,7 +57,7 @@ The installer will create:
 * A shortcut to the configuration text file.
 * A shortcut to watch the node status in realtime.
 
-At this stage you should be able to click on "Node Status Watch" shortcut in your Start Menu to verify that you are synchronizing.
+At this stage you should be able to click on "Node Status Watch" shortcut in your Start Menu to verify that you are synchronizing.  If you unchecked "Start on installation" you will need to start the service manually.
 
 ## Manual Configuration
 
@@ -64,7 +77,7 @@ In the same way, stopping the node can be done  with the Services management con
 
 ### Monitoring the node
 
-The node can be monitored using the "Node Watch tool". Access it by going to your Start Menu, "Algorand ..." group, Node Watch shortcut. This is equivalent of running the `goal node status` command. 
+The node can be monitored using the "Node Status Watch" shortcut. Access it by going to your Start Menu, "Algorand ..." group, Node Watch shortcut. This is equivalent of running the `goal node status` command. 
 
 ### Using the Windows Event Log
 
@@ -83,8 +96,9 @@ Open the Event Log by pressing Windows + R and executing `eventvwr`. The service
 3008 | Invalid, nonexistent or inaccesible node data directory.
 3009 | Pre-flight configuration information.
 
-
 ## Building How-TO
+
+The following information applies to power users and developer that are interested in doing a manual build of the Algorand Service and installer.
 
 ### Prerequisites
 
