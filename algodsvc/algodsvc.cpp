@@ -336,7 +336,9 @@ WORD SeverityToEventType(DWORD id)
 //
 void Log(DWORD id, std::vector<LPCWSTR> insertionStrings)
 {
-    HANDLE hEventSrc = RegisterEventSource(NULL, L"Algorand Node Service");
+    wchar_t szEventSrc[512] = {0};
+    StringCchPrintf(szEventSrc, 512, L"Algorand Node Service (%s)", g_szNetwork);
+    HANDLE hEventSrc = RegisterEventSource(NULL, szEventSrc);
     if (!hEventSrc)
     {
         dprintfW(L"algodsvc: Cannot register event source. Error is %d", GetLastError());

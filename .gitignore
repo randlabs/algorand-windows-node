@@ -10,3 +10,6 @@
 /installer/src/*.wixpdb
 /installer/src/cabs
 /installer/src/*.dll
+/installer/src/*.gch
+installer/src/msi-*
+installer/src/obj-*
