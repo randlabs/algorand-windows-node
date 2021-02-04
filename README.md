@@ -4,6 +4,10 @@ This repository contains the supporting software for running an Algorand Node un
 
 > :warning: 32-bit Windows is not supported.
 
+## How to Install
+
+To install Algorand Node for Windows, please download and execute the package you prefer from the **Releases** section on this repository. They follow the **stable** branch and version scheme of the official node.
+
 ## Preliminary Information 
 
 Please read the following usage guidelines and advices.
@@ -17,14 +21,77 @@ Please read the following usage guidelines and advices.
 
 * Automatic downgrades are not supported. If you want to install a previous version, uninstall the current version completely first.
 
-## Prerequisites
+### Known bugs :warning:
+
+* Coexisting installations may show only one set of shortcuts.  
+
+* The Node Watch Status window displays ANSI escape codes instead of interpreting them properly. This does not interfere with its functionality.
+
+* Using the _Maintenance_ or _Repair_ Dialog from the installation MSI does not work.  Please use the **Add/Remove Programs** entry in the **System Settings** panel.
+
+
+
+## Installation
+
+To launch the installation process just double click the MSI file, accept the license agreement, choose your base directory, configure your node with your desired options (port and archival mode) and wait for the installer to finish.  
+
+At finish, the installer defaults to start automatically the Algorand Node service.
+
+The installer will create:
+
+* A new windows Service (algodsvc) for controlling the Algorand Node. The name of the service is `algodsvc_` followed by  the network the node is connected to. According to this scheme, your service will be named `algodsvc_testnet`, `algodsvc_betanet` or `algodsvc_mainnet`. 
+* "Command Line Tools" shortcut to access the binary directory where all the Algorand tools reside.
+* A shortcut to the configuration text file.
+* A shortcut to watch the node status in realtime.
+
+At this stage you should be able to click on "Node Status Watch" shortcut in your Start Menu to verify that you are synchronizing.
+
+## Manual Configuration
+
+Please click  the "Configuration" shortcut in your Start Menu, under the "Algorand Node" group, to start the proper `config.json` file.  **To make the changes operative, please restart the Windows service**
+
+## Usage
+
+> :memo: In the following examples, `service_name` is `algodsvc_` followed by  the network the node is connected to. According to this scheme, your service will be named `algodsvc_testnet`, `algodsvc_betanet` or `algodsvc_mainnet`. 
+
+Start the Algorand Service by using the "Services" management console. You can launch the "Run..." panel by pressing Windows + R and executing `services.msc`. Alternatively, you can use the `sc start <service_name>` command in a shell with administrative privileges.
+
+The status of the service can be inspected with the Services management console, or by executing `sc query <service_name>` command in a shell with administrative privileges.
+
+In the same way, stopping the node can be done  with the Services management console, or by executing `sc stop <service_name>` command in a shell with administrative privileges.
+
+> :warning: Forcefully terminating the controlled ALGOD.EXE executable, either by user action or by fatal system error, will trigger the stopping of the Windows service. This will get reported to the Windows Event Log as a 3002 event.
+
+### Monitoring the node
+
+The node can be monitored using the "Node Watch tool". Access it by going to your Start Menu, "Algorand ..." group, Node Watch shortcut. This is equivalent of running the `goal node status` command. 
+
+### Using the Windows Event Log
+
+Open the Event Log by pressing Windows + R and executing `eventvwr`. The service will write entries with origin named `Algorand Windows Service`. Current emitted events are on the following list:
+
+| Event ID | Cause |
+|----------| ----- |
+| 3000 | Service started. |
+| 3001 | Algod.exe executable finished normally. |
+3002 | Algod.exe executable terminated abnormally.
+3003 | Configuration error.
+3004 | Algod.exe child process could not be spawned.
+3005 | Service stopped.
+3006 | Invalid number of arguments for service start.
+3007 | Invalid network parameter.
+3008 | Invalid, nonexistent or inaccesible node data directory.
+3009 | Pre-flight configuration information.
+
+
+## Building How-TO
+
+### Prerequisites
 
 To build the algorand node, service and installer you need  to install the following software distributions:
 
 * **MSYS2 x64** from https://www.msys2.org/.  MSYS2 is an environment to build and run Linux and UNIX software natively in Windows.
 * **WiX Toolset** from https://wixtoolset.org (>= v3.11) to compile and build the MSI installer package. 
-
-## Building How-TO
 
 The two projects contained herein are: 
 
@@ -84,58 +151,6 @@ to generate the `algodsvc.exe` binary file.
 
     The build process should take a while.  It will generate a MSI installer named  `AlgoRand-testnet.msi`  or similar depending on your chosen Algorand network.
 
-
-## Installation
-
-To launch the installation process just double click the MSI file, accept the license agreement, choose your base directory, configure your node with your desired options (port and archival mode) and wait for the installer to finish.  
-
-At finish, the installer defaults to start automatically the Algorand Node service.
-
-The installer will create:
-
-* A new windows Service (algodsvc) for controlling the Algorand Node. The name of the service is `algodsvc_` followed by  the network the node is connected to. According to this scheme, your service will be named `algodsvc_testnet`, `algodsvc_betanet` or `algodsvc_mainnet`. 
-* "Command Line Tools" shortcut to access the binary directory where all the Algorand tools reside.
-* A shortcut to the configuration text file.
-* A shortcut to watch the node status in realtime.
-
-At this stage you should be able to click on "Node Status Watch" shortcut in your Start Menu to verify that you are synchronizing.
-
-## Manual Configuration
-
-Please click  the "Configuration" shortcut in your Start Menu, under the "Algorand Node" group, to start the proper `config.json` file.  **To make the changes operative, please restart the Windows service**
-
-## Usage
-
-> :memo: In the following examples, `service_name` is `algodsvc_` followed by  the network the node is connected to. According to this scheme, your service will be named `algodsvc_testnet`, `algodsvc_betanet` or `algodsvc_mainnet`. 
-
-Start the Algorand Service by using the "Services" management console. You can launch the "Run..." panel by pressing Windows + R and executing `services.msc`. Alternatively, you can use the `sc start <service_name>` command in a shell with administrative privileges.
-
-The status of the service can be inspected with the Services management console, or by executing `sc query <service_name>` command in a shell with administrative privileges.
-
-In the same way, stopping the node can be done  with the Services management console, or by executing `sc stop <service_name>` command in a shell with administrative privileges.
-
-> :warning: Forcefully terminating the controlled ALGOD.EXE executable, either by user action or by fatal system error, will trigger the stopping of the Windows service. This will get reported to the Windows Event Log as a 3002 event.
-
-### Monitoring the node
-
-The node can be monitored using the "Node Watch tool". Access it by going to your Start Menu, "Algorand ..." group, Node Watch shortcut. This is equivalent of running the `goal node status` command. 
-
-### Using the Windows Event Log
-
-Open the Event Log by pressing Windows + R and executing `eventvwr`. The service will write entries with origin named `Algorand Windows Service`. Current emitted events are on the following list:
-
-| Event ID | Cause |
-|----------| ----- |
-| 3000 | Service started. |
-| 3001 | Algod.exe executable finished normally. |
-3002 | Algod.exe executable terminated abnormally.
-3003 | Configuration error.
-3004 | Algod.exe child process could not be spawned.
-3005 | Service stopped.
-3006 | Invalid number of arguments for service start.
-3007 | Invalid network parameter.
-3008 | Invalid, nonexistent or inaccesible node data directory.
-3009 | Pre-flight configuration information.
 
 
 ## License
