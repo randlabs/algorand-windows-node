@@ -29,12 +29,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <?if $(var.NETWORK) = "betanet" ?>
         <?define FULLSERVICENAME = "algodsvc_betanet" ?>
         <?define FULLUPGRADECODE = 'ff190b41-c9d0-4e2f-83ba-96e508ab45bf' ?>
+        <?define DEFAULTPORT = '8113' ?>
     <?elseif $(var.NETWORK) = "mainnet" ?>
         <?define FULLSERVICENAME = "algodsvc_mainnet" ?>
         <?define FULLUPGRADECODE = 'a5fc9132-8d0b-4731-9a8f-2478a593a7a2' ?>
+        <?define DEFAULTPORT = '8111' ?>
     <?elseif $(var.NETWORK) = "testnet" ?>
         <?define FULLSERVICENAME = "algodsvc_testnet" ?>
         <?define FULLUPGRADECODE = '293a0964-5644-48c0-b79f-3031296c2c99' ?>
+        <?define DEFAULTPORT = '8112' ?>
     <?else ?>
         <?error NETWORK variable must be defined to betanet, mainnet or testnet. ?>
     <?endif ?>
@@ -79,8 +82,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Condition Message="[ProductName] cannot be installed on a 32-bit operating system."><![CDATA[VersionNT64]]></Condition>
 
         <!-- Configuration defaults -->
-
-        <Property Id="PORTNUMBER" Value="8081" Secure="yes"/>
+        
+        <Property Id="PORTNUMBER" Value="$(var.DEFAULTPORT)" Secure="yes"/>
         <Property Id="ENABLEARCHIVALMODE" Secure="yes"/>
         <Property Id="STARTSVC_AT_INSTALL" Value="1" Secure="yes"/>
         <Property Id="STARTSVC_AT_BOOT" Value="1" Secure="yes"/>
