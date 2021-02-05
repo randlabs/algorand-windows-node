@@ -138,7 +138,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Custom Action="ReadConfigFromFile" After="CostFinalize">NOT WIX_UPGRADE_DETECTED AND NOT Installed</Custom>
         </InstallUISequence>
         
-        <Media Id='1' Cabinet='Algorand_$(var.NETWORK).cab' EmbedCab='yes' DiskPrompt='Disk 1' />
+        <Media Id='1' Cabinet='Algorand_$(var.NETWORK).cab' EmbedCab='yes' DiskPrompt='Disk 1' CompressionLevel='high' />
         <Property Id='DiskPrompt' Value="Algorand Node Installer Media" />
 
         <!-- UI -->

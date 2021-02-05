@@ -34,7 +34,7 @@ LIGHT=$(WIX)bin/light.exe
 GOBINFOLDER=$(HOME)/go/bin
 SVCBINFOLDER=../../algodsvc
 ALGOVERSION := $(shell $(GOBINFOLDER)/goal.exe --version | awk 'FNR == 2 { print $$1 }' | awk -F "." 'BEGIN{OFS=""} { print $$1,".",$$2,".",$$3 }')
-MSI=$(MSIDIR)AlgorandNode-$(SUFFIX).msi
+MSI=$(MSIDIR)AlgorandNode-$(SUFFIX)_amd64.msi
 THISPRODUCTID := $(shell echo -n $(SUFFIX) | sha256sum | cut -c 1-32 | sed 's/./&-/8;s/./&-/13;s/./&-/18;s/./&-/23')
 
 all: $(PCHOUT) $(CADLL) $(OBJ) $(MSI) 
