@@ -46,10 +46,10 @@ $(CADLL): $(CASOURCE) $(PCHOUT)
 	$(CC) $(CASOURCE) -include $(PCHSOURCE) -o $(CADLL) $(CFLAGS)
 
 $(OBJ): $(SOURCES) $(CADLL)
-	"$(CANDLE)" $(SOURCES) -out "$(OBJDIR)" -arch x64 -dTHISPRODUCTID=$(THISPRODUCTID) -dALGOVERSION=$(ALGOVERSION) -dGOBINFOLDER=$(GOBINFOLDER) -dSVCBINFOLDER=$(SVCBINFOLDER) -dNETWORK=$(NETWORK) -v
+	"$(CANDLE)" $(SOURCES) -ext WixUtilExtension -out "$(OBJDIR)" -arch x64 -dTHISPRODUCTID=$(THISPRODUCTID) -dALGOVERSION=$(ALGOVERSION) -dGOBINFOLDER=$(GOBINFOLDER) -dSVCBINFOLDER=$(SVCBINFOLDER) -dNETWORK=$(NETWORK) -v
 
 $(MSI): $(OBJ)
-	"$(LIGHT)" $(OBJDIR)*.wixobj -ext WixUIExtension -out $(MSI) -reusecab -cc cabs -v
+	"$(LIGHT)" $(OBJDIR)*.wixobj  -ext WixUtilExtension -ext WixUIExtension -out $(MSI) -reusecab -cc cabs -v
 
 clean:
 	@rm -f $(CADLL)
