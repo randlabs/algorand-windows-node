@@ -207,8 +207,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     <Component Id="AlgorandShortcuts" Guid="*">
                         <Shortcut Id="CommandLineTools" Name="Algorand Command Line Tools" 
                             Target="[System64Folder]cmd.exe"
-                            Arguments="/k cd /d &quot;[netspecificdir]&quot;"
-                            WorkingDirectory="netspecificdir"
+                            Arguments="/k &quot;[netspecificdir]\System\setenv.cmd&quot; /walkback"
+                            WorkingDirectory="systemDir"
                             Show="normal"/>
 
                         <Shortcut Id="NodeStatusWatch" Name="Node Status Watch" 
@@ -255,6 +255,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                             <RegistryKey Key="SYSTEM\CurrentControlSet\Services\EventLog\Application\Algorand Node Service ($(var.NETWORK))" Root="HKLM">
                                 <RegistryValue Id="REG_EvMsgFile" Type="string" Name="EventMessageFile" Value="[systemDir]algodsvc.exe" />
                             </RegistryKey>
+                        </Component>
+
+                        <Component Id='SetEnvBatch' Guid='*'>
+                            <File Id="setenv" Name="setenv.cmd" DiskId="1" Source="$(var.BATCHFOLDER)/setenv.cmd" KeyPath="yes" />
                         </Component>
 
                         </Directory>
@@ -425,6 +429,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ComponentRef Id='genesisfile' />
             <ComponentRef Id='configfile' />
             <ComponentRef Id='AlgorandNodeService'/>
+            <ComponentRef Id='SetEnvBatch'/>
             <ComponentRef Id='BINCOMP_algocfg' />
             <ComponentRef Id='BINCOMP_algod'/>
             <ComponentRef Id='BINCOMP_algoh'/>

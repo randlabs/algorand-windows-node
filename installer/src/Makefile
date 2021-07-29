@@ -33,6 +33,7 @@ CANDLE=$(WIX)bin/candle.exe
 LIGHT=$(WIX)bin/light.exe
 GOBINFOLDER=$(HOME)/go/bin
 SVCBINFOLDER=../../algodsvc
+BATCHFOLDER=./batch
 ALGOVERSION := $(shell $(GOBINFOLDER)/goal.exe --version | awk 'FNR == 2 { print $$1 }' | awk -F "." 'BEGIN{OFS=""} { print $$1,".",$$2,".",$$3 }')
 MSI=$(MSIDIR)AlgorandNode-$(SUFFIX)_amd64.msi
 THISPRODUCTID := $(shell echo -n $(SUFFIX) | sha256sum | cut -c 1-32 | sed 's/./&-/8;s/./&-/13;s/./&-/18;s/./&-/23')
@@ -46,7 +47,7 @@ $(CADLL): $(CASOURCE) $(PCHOUT)
 	$(CC) $(CASOURCE) -include $(PCHSOURCE) -o $(CADLL) $(CFLAGS)
 
 $(OBJ): $(SOURCES) $(CADLL)
-	"$(CANDLE)" $(SOURCES) -ext WixUtilExtension -out "$(OBJDIR)" -arch x64 -dTHISPRODUCTID=$(THISPRODUCTID) -dALGOVERSION=$(ALGOVERSION) -dGOBINFOLDER=$(GOBINFOLDER) -dSVCBINFOLDER=$(SVCBINFOLDER) -dNETWORK=$(NETWORK) -v
+	"$(CANDLE)" $(SOURCES) -ext WixUtilExtension -out "$(OBJDIR)" -arch x64 -dTHISPRODUCTID=$(THISPRODUCTID) -dALGOVERSION=$(ALGOVERSION) -dGOBINFOLDER=$(GOBINFOLDER) -dSVCBINFOLDER=$(SVCBINFOLDER) -dBATCHFOLDER=$(BATCHFOLDER) -dNETWORK=$(NETWORK) -v
 
 $(MSI): $(OBJ)
 	"$(LIGHT)" $(OBJDIR)*.wixobj  -ext WixUtilExtension -ext WixUIExtension -out $(MSI) -reusecab -cc cabs -v
