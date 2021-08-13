@@ -67,16 +67,6 @@ Please click  the "Configuration" shortcut in your Start Menu, under the "Algora
 
 > :memo: In the following examples, `service_name` is `algodsvc_` followed by  the network the node is connected to. According to this scheme, your service will be named `algodsvc_testnet`, `algodsvc_betanet` or `algodsvc_mainnet`. 
 
-All commands requiring data directory specification should be supplied with:
-
-```
-%PROGRAMDATA%\Algorand\data\<network>
-```
-Replace `<network>` with the node you are operating on. For example, on the Command Line Tools you could type:
-
-```
-goal account changeonlinestatus -a o=%address% -d %PROGRAMDATA%\Algorand\data\testnet
-```
 
 Start the Algorand Service by using the "Services" management console. You can launch the "Run..." panel by pressing Windows + R and executing `services.msc`. Alternatively, you can use the `sc start <service_name>` command in a shell with administrative privileges.
 
@@ -106,6 +96,26 @@ Open the Event Log by pressing Windows + R and executing `eventvwr`. The service
 3007 | Invalid network parameter.
 3008 | Invalid, nonexistent or inaccesible node data directory.
 3009 | Pre-flight configuration information.
+
+### Data directory setting for Release before 2.8.0
+
+If you install any release < 2.8.0, all commands requiring data directory specification should be supplied with:
+
+1. ```
+   %PROGRAMDATA%\Algorand\data\<network>
+   ```
+   Replace `<network>` with the node you are operating on. For example, on the Command Line Tools you could type:
+
+   ```
+   goal account changeonlinestatus -a o=%address% -d %PROGRAMDATA%\Algorand\data\testnet
+   ```
+
+or alternatively,
+2. Set `ALGORAND_DATA` environment variable as follows
+
+   ```
+   %PROGRAMDATA%\Algorand\data\<network>
+   ```
 
 ## Building How-TO
 
