@@ -23,7 +23,7 @@ PCHSOURCE=./inc/json.hpp
 PCHOUT=json.hpp.gch
 CADLL=$(CABASENAME).dll
 CC=g++
-CFLAGS=-Wall -Wextra -static -shared -pedantic -O2 -g -fanalyzer -DFORTIFY_SOURCE=2 -fstack-protector -lmsi -municode
+CFLAGS=-Wall -Wextra -static -shared -pedantic -O2 -g -fanalyzer -D_FORTIFY_SOURCE=2 -fstack-protector -lmsi -municode
 SOURCES=AlgorandNode.wxs UI.wxs WelcomeDlg_2.wxs NodeConfigDlg.wxs MessageDlg.wxs
 SUFFIX=$(ALGOVERSION)-$(NETWORK)
 OBJDIR=./obj-$(SUFFIX)/

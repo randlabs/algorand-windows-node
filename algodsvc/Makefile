@@ -15,7 +15,7 @@ REG=reg
 SERVICENAME=AlgodSvc
 SERVICEDISPLAYNAME="Algorand Node Windows Service" 
 CC=g++
-CFLAGS=-Wall -static -pedantic -O2 -g -fanalyzer -DFORTIFY_SOURCE=2 -fstack-protector
+CFLAGS=-Wall -static -pedantic -O2 -g -fanalyzer -D_FORTIFY_SOURCE=2 -fstack-protector
 LDFLAGS=-municode
 OUTNAME=algodsvc
 TARGET=$(OUTNAME).exe
